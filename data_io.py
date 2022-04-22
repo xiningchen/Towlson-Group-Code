@@ -13,7 +13,6 @@ from datetime import datetime
 from scipy.io import loadmat
 
 # Some global variables
-PICKLE_FILE_BASE = 'pickles/'
 BRAINNET_PATH = 'BrainNet_Viewer/'
 DATE = datetime.today().strftime('%Y-%m-%d')
 
@@ -60,13 +59,14 @@ def import_XLSX(path, file_name=None, numpy_array=False):
 # ----------------------------------------------------------------------------------------------
 def import_MAT(path, file_name=None):
     if file_name is None:
-        files = {}
+        MAT_files = []
         for root, dirs, files in os.walk(path):
             for file in tqdm(files):
                 if not file.endswith('.mat'):
                     continue
                 data = loadmat(root+file)
-        return files
+                MAT_files.append(data)
+        return MAT_files
     else:
         data = loadmat(path+file_name)
         print(data.keys())
@@ -79,9 +79,9 @@ def import_MAT(path, file_name=None):
 # Inputs:
 #
 # ----------------------------------------------------------------------------------------------
-def save_to_pickle(data, pickle_name):
+def save_to_pickle(data, path, pickle_name):
     pickle_name += f'-{DATE}.pkl'
-    file_path = os.path.join(PICKLE_FILE_BASE, pickle_name)
+    file_path = os.path.join(path, pickle_name)
     if not os.path.exists(os.path.dirname(file_path)):
         os.makedirs(os.path.dirname(file_path))
 
@@ -89,10 +89,10 @@ def save_to_pickle(data, pickle_name):
         pkl.dump(data, f)
 
     f.close()
-    print(f"Saved to {pickle_name}.")
+    print(f"Saved to {file_path}.")
 
-def load_from_pickle(pickle_name):
-    file_path = os.path.join(PICKLE_FILE_BASE, pickle_name)
+def load_from_pickle(path, pickle_name):
+    file_path = os.path.join(path, pickle_name)
     if os.path.exists(file_path):
         with open(file_path, 'rb') as f:
             res = pkl.load(f)
