@@ -9,6 +9,11 @@ See 'example_demo.ipynb' for examples of using functions in python files
 * Function for averaging brain connectomes
 * Function for getting basic network statistics (WIP)
 
+### Functional Brain Community Detection with bctpy
+* Function for finding a good resolution parameter value for Louvain detection
+* Function for Louvain community detection with finer grain
+* Function for plotting partition (WIP)
+
 ### Resources/References 
 * [Brain Connectivity Toolbox (Python)](https://pypi.org/project/bctpy/)
 * [Community Louvain 2021 - MATLAB](https://drive.google.com/drive/folders/1P32DAUy1AFEn7biMomD0v8j373byRAOq)
