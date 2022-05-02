@@ -1,12 +1,10 @@
 from collections import Counter
-import networkx as nx
 import numpy as np
-from matplotlib import pyplot as plt
 from tqdm import tqdm
 import bct
-import matplotlib.cm as cm
 from sklearn.metrics.cluster import adjusted_rand_score
 import math
+import pickle as pkl
 
 def find_resolution_range(W, min_community_num, max_community_num, min_gamma, max_gamma, inc, B='modularity', sample_size=1):
     x_axis = []
@@ -38,6 +36,7 @@ def community_by_modularity_stability(W, res_lower_range, res_upper_range, inc, 
     partition_list_by_gamma = {r: [] for r in range(0, r_upper)}
     stability_by_gamma = {r: 0.0 for r in range(0, r_upper)}
     modularity_by_gamma = {r: 0.0 for r in range(0, r_upper)}
+    modularity_by_gamma_per_partition = {r: [] for r in range(0, r_upper)}
     for i in tqdm(range(0, rep)):
         for r in range(0, r_upper):
             res = res_lower_range + inc * r
@@ -49,6 +48,7 @@ def community_by_modularity_stability(W, res_lower_range, res_upper_range, inc, 
                     stability_by_gamma[r] += adjusted_rand_score(plist, partition_list)
             partition_by_gamma[r].append(partition)
             partition_list_by_gamma[r].append(partition_list)
+            modularity_by_gamma_per_partition[r].append(q)
             # Compute modularity value  ****** is q returned modularity value? Or something q-statistc??
             modularity_by_gamma[r] += q
     # Calculate average z-rand score per gamma
@@ -61,13 +61,64 @@ def community_by_modularity_stability(W, res_lower_range, res_upper_range, inc, 
     index_max = np.argmax(weighted_avg_zscore)
     if weighted_avg_zscore[index_max] != max(weighted_avg_zscore):
         print("Max gamma incorrect - something wrong.")
-    return res_lower_range + inc*index_max, index_max, avg_modularity_by_gamma, avg_stab_by_gamma, partition_by_gamma
+    return res_lower_range + inc*index_max, index_max, avg_modularity_by_gamma, avg_stab_by_gamma, partition_by_gamma, modularity_by_gamma_per_partition
 
 
-def draw_community(G, partition):
-    # print(community_louvain.modularity(partition, G))
-    pos = nx.spring_layout(G)
-    cmap = cm.get_cmap('viridis', max(partition.values()) + 1)
-    nx.draw_networkx_nodes(G, pos, partition.keys(), node_size=40, cmap=cmap, node_color=list(partition.values()))
-    nx.draw_networkx_edges(G, pos, alpha=0.5)
-    plt.show()
+def main(path, data_path, phase):
+    if phase=='1':
+        phase = "EF"
+    if phase=='2':
+        phase = "LF"
+    if phase=='3':
+        phase = "ML"
+
+    pickle_file = data_path + '/' + f'averaged-{phase}-2022-04-27.pkl'
+    if os.path.exists(pickle_file):
+        with open(pickle_file, 'rb') as f:
+            avg_connectome = pkl.load(f)
+            print(f'path = {path} \n data_path = {data_path} \n phase = {phase}')
+            print("opened connectome: ", avg_connectome)
+
+    res_range = {'EF': [1.077, 1.112], 'LF': [1.07, 1.125], 'ML': [1.061, 1.102]}
+    _, _, _, _, partition_by_gamma, modularity_by_gamma_per_partition = community_by_modularity_stability(avg_connectome,
+                                                                                      res_range[phase][0],
+                                                                                      res_range[phase][1],
+                                                                                      inc=0.001,
+                                                                                      B='negative_asym',
+                                                                                      rep=1000)
+    good_count = 0
+    continue_search = True
+    i = 0
+    while continue_search:
+        for partition_list in partition_by_gamma[i]:
+            if len(Counter(partition_list)) == 7:
+                good_count += 1
+        if good_count >= 700:
+            continue_search = False
+            print("phase\t gamma \t good_count \t index i")
+            print(phase, res_range[phase][0] + 0.001 * i, good_count, i)
+        else:
+            i += 1
+    max_mod = max(modularity_by_gamma_per_partition[i])
+    max_mod_idx = modularity_by_gamma_per_partition[i].index(max_mod)
+    best_partition = partition_by_gamma[i][max_mod_idx]
+
+    file_path = os.path.join(path, f'best_partition_{phase}.pkl')
+    with open(file_path, 'wb') as f:
+        pkl.dump(best_partition, f)
+    f.close()
+    print(f"Saved to {file_path}.")
+
+
+if __name__ == '__main__':
+    import sys, os
+
+    path = sys.argv[1]
+    data_path = sys.argv[2]
+    phase = sys.argv[3]
+    if not os.path.exists(path):
+        print('Directory:', path, '\ndoes not exist, creating new one.')
+        os.makedirs(path)
+    else:
+        print('Saving to', path)
+    main(path, data_path, phase)

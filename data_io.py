@@ -13,8 +13,12 @@ from datetime import datetime
 from scipy.io import loadmat
 
 # Some global variables
-BRAINNET_PATH = 'BrainNet_Viewer/'
 DATE = datetime.today().strftime('%Y-%m-%d')
+
+# Private function for creating folder paths
+def __check_path(full_path):
+    if not os.path.exists(os.path.dirname(full_path)):
+        os.makedirs(os.path.dirname(full_path))
 
 # --------------------------------------------------------------------------------------------- File IO
 # Read data from an .xlsx file
@@ -82,12 +86,9 @@ def import_MAT(path, file_name=None):
 def save_to_pickle(data, path, pickle_name):
     pickle_name += f'-{DATE}.pkl'
     file_path = os.path.join(path, pickle_name)
-    if not os.path.exists(os.path.dirname(file_path)):
-        os.makedirs(os.path.dirname(file_path))
-
+    __check_path(file_path)
     with open(file_path, 'wb') as f:
         pkl.dump(data, f)
-
     f.close()
     print(f"Saved to {file_path}.")
 
@@ -108,17 +109,17 @@ def load_from_pickle(path, pickle_name):
 # ----------------------------------------------------------------------------------------------
 # Inputs:
 # nodeAttrDict: a dictionary of node labels with corresponding values for node color and node size
-# nodeDF: node data frame containing the node's X, Y, Z coordinates.
+# node_df: node dataframe containing the node's X, Y, Z coordinates. Dataframe's index are node names.
 # fileName: exported file .node name.
 # ----------------------------------------------------------------------------------------------
-def export_node_file(node_df, nodeAttrDict, file_name='tempNodeFileName'):
-    file_name = BRAINNET_PATH + file_name + ".node"
-    with open(file_name, 'w') as writer:
+def export_node_file(node_df, color, size, path, file_name='tempNodeFileName'):
+    file_name += f'-{DATE}.node'
+    file_path = os.path.join(path, file_name)
+    __check_path(file_path)
+    with open(file_path, 'w') as writer:
         lines = []
-        for nodeLabel, row in node_df.iterrows():
-            color = nodeAttrDict['color'][nodeLabel]
-            size = nodeAttrDict['size'][nodeLabel]
-            lines.append(f"{row['X']}\t{row['Y']}\t{row['Z']}\t{color}\t{size}\t{nodeLabel}\n")
+        for node_name, row in node_df.iterrows():
+            lines.append(f"{row['X']}\t{row['Y']}\t{row['Z']}\t{color[node_name]}\t{size[node_name]}\t{node_name}\n")
         writer.writelines(lines)
     print(f"File saved to {file_name}")
 
@@ -129,8 +130,10 @@ def export_node_file(node_df, nodeAttrDict, file_name='tempNodeFileName'):
 # Inputs:
 # MIGHT NOT NEED ----
 # ----------------------------------------------------------------------------------------------
-def export_edge_file(adj_df, file_name='tempNodeFileName', binarize=True):
-    file_name = BRAINNET_PATH + file_name + ".edge"
+def export_edge_file(adj_df, path, file_name='tempNodeFileName', binarize=True):
+    file_name += f'-{DATE}.edge'
+    file_path = os.path.join(path, file_name)
+    __check_path(file_path)
     with open(file_name, 'w') as writer:
         lines = []
         for nodeLabel, row in adj_df.iterrows():
