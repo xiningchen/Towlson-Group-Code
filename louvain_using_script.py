@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 import bct
 from sklearn.metrics.cluster import adjusted_rand_score
-import math
+#import math
 import pickle as pkl
 
 def find_resolution_range(W, min_community_num, max_community_num, min_gamma, max_gamma, inc, B='modularity', sample_size=1):
@@ -30,8 +30,10 @@ def find_resolution_range(W, min_community_num, max_community_num, min_gamma, ma
 
 
 def community_by_modularity_stability(W, res_lower_range, res_upper_range, inc, B='modularity', rep=2):
-    count = math.comb(rep, 2)
-    r_upper = math.ceil((res_upper_range - res_lower_range)/inc)
+    #count = math.comb(rep, 2)
+    count = 499500
+    #r_upper = math.ceil((res_upper_range - res_lower_range)/inc)
+    r_upper = round((res_upper_range - res_lower_range)/inc)
     partition_by_gamma = {r: [] for r in range(0, r_upper)}
     partition_list_by_gamma = {r: [] for r in range(0, r_upper)}
     stability_by_gamma = {r: 0.0 for r in range(0, r_upper)}
@@ -72,14 +74,15 @@ def main(path, data_path, phase):
     if phase=='3':
         phase = "ML"
 
-    pickle_file = data_path + '/' + f'averaged-{phase}-2022-04-27.pkl'
+    pickle_file = data_path + '/' + f'averaged-{phase}-2022-04-28.pkl'
     if os.path.exists(pickle_file):
         with open(pickle_file, 'rb') as f:
             avg_connectome = pkl.load(f)
             print(f'path = {path} \n data_path = {data_path} \n phase = {phase}')
             print("opened connectome: ", avg_connectome)
 
-    res_range = {'EF': [1.077, 1.112], 'LF': [1.07, 1.125], 'ML': [1.061, 1.102]}
+    # res_range = {'EF': [1.077, 1.112], 'LF': [1.07, 1.125], 'ML': [1.061, 1.102]}
+    res_range = {'EF': [0.4, 1.8], 'LF': [0.4, 1.8], 'ML': [0.4, 1.8]}
     _, _, _, _, partition_by_gamma, modularity_by_gamma_per_partition = community_by_modularity_stability(avg_connectome,
                                                                                       res_range[phase][0],
                                                                                       res_range[phase][1],
@@ -107,6 +110,12 @@ def main(path, data_path, phase):
     with open(file_path, 'wb') as f:
         pkl.dump(best_partition, f)
     f.close()
+    file_path = os.path.join(path, f'all_partitions_{phase}.pkl')
+    with open(file_path, 'wb') as f:
+        data = {'partition_by_gamma': partition_by_gamma, 'modularity_by_gamma_per_partition': modularity_by_gamma_per_partition}
+        pkl.dump(data, f)
+    f.close()
+
     print(f"Saved to {file_path}.")
 
 

@@ -7,13 +7,12 @@
 import os
 import pickle as pkl
 import pandas as pd
-import numpy as np
 from tqdm import tqdm
 from datetime import datetime
 from scipy.io import loadmat
 
 # Some global variables
-DATE = datetime.today().strftime('%Y-%m-%d')
+DATE = datetime.today().strftime('%d-%m-%Y')
 
 # Private function for creating folder paths
 def __check_path(full_path):
@@ -31,7 +30,7 @@ def __check_path(full_path):
 # numpyArray (boolean): optional flag for deciding if the read input should be returned as a Panda
 #                       dataframe or a numpy array. Default value is False (return as Panda Dataframes)
 # ----------------------------------------------------------------------------------------------
-def import_XLSX(path, file_name=None, numpy_array=False):
+def import_XLSX(path, file_name=None, numpy_array=False, index_col=0):
     if file_name is None:
         files = {}
         for root, dirs, files in os.walk(path):
@@ -39,16 +38,16 @@ def import_XLSX(path, file_name=None, numpy_array=False):
                 if not file.endswith('.xlsx'):
                     continue
                 if numpy_array is False:
-                    files[file] = pd.read_excel(path + file, index_col=0, header=0)
+                    files[file] = pd.read_excel(path + file, index_col=index_col, header=0)
                 if numpy_array is True:
-                    mat = pd.read_excel(path + file, index_col=0, header=0)
+                    mat = pd.read_excel(path + file, index_col=index_col, header=0)
                     files[file] = mat.to_numpy()
         return files
     else:
         if numpy_array is False:
-            return pd.read_excel(path + file_name, index_col=0, header=0)
+            return pd.read_excel(path + file_name, index_col=index_col, header=0)
         if numpy_array is True:
-            mat = pd.read_excel(path + file_name, index_col=0, header=0)
+            mat = pd.read_excel(path + file_name, index_col=index_col, header=0)
             return mat.to_numpy()
 
 # Read data from a .mat file
@@ -63,6 +62,7 @@ def import_XLSX(path, file_name=None, numpy_array=False):
 # ----------------------------------------------------------------------------------------------
 def import_MAT(path, file_name=None):
     if file_name is None:
+        MAT_files_name = []
         MAT_files = []
         for root, dirs, files in os.walk(path):
             for file in tqdm(files):
@@ -70,7 +70,8 @@ def import_MAT(path, file_name=None):
                     continue
                 data = loadmat(root+file)
                 MAT_files.append(data)
-        return MAT_files
+                MAT_files_name.append(file)
+        return MAT_files_name, MAT_files
     else:
         data = loadmat(path+file_name)
         print(data.keys())
@@ -84,7 +85,10 @@ def import_MAT(path, file_name=None):
 #
 # ----------------------------------------------------------------------------------------------
 def save_to_pickle(data, path, pickle_name):
-    pickle_name += f'-{DATE}.pkl'
+    if '.pkl' in pickle_name:
+        pickle_name = pickle_name[:len(pickle_name)-4] + f'-{DATE}.pkl'
+    else:
+        pickle_name += f'-{DATE}.pkl'
     file_path = os.path.join(path, pickle_name)
     __check_path(file_path)
     with open(file_path, 'wb') as f:
