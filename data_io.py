@@ -11,26 +11,21 @@ from tqdm import tqdm
 from datetime import datetime
 from scipy.io import loadmat
 
-# Some global variables
-DATE = datetime.today().strftime('%d-%m-%Y')
-
-# Private function for creating folder paths
 def __check_path(full_path):
     if not os.path.exists(os.path.dirname(full_path)):
         os.makedirs(os.path.dirname(full_path))
 
-# --------------------------------------------------------------------------------------------- File IO
-# Read data from an .xlsx file
-# ----------------------------------------------------------------------------------------------
-# Inputs:
-# path (string): a file path to the folder that contains the file(s) to be read
-# file_name (string): optional input with default value None. If the value is None, then function will
-#                     load every .xlsx file in the path specified. Otherwise, it will open the file_name
-#                     specified from user input.
-# numpyArray (boolean): optional flag for deciding if the read input should be returned as a Panda
-#                       dataframe or a numpy array. Default value is False (return as Panda Dataframes)
-# ----------------------------------------------------------------------------------------------
 def import_XLSX(path, file_name=None, numpy_array=False, index_col=0):
+    """
+    Read data from an .xlsx file
+    :param path: file path to the folder that contains the file(s) to be read
+    :param file_name: optional input with default value None. If the value is None, then function will
+    load every .xlsx file in the path specified. Otherwise, it will open the file_name specified from user input.
+    :param numpy_array: optional flag for deciding if the read input should be returned as a Panda dataframe or
+    a numpy array. Default value is False (return as Panda Dataframes)
+    :param index_col: Specify if there's an index column or not when reading in.
+    :return: Read in data from excel.
+    """
     if file_name is None:
         files = {}
         for root, dirs, files in os.walk(path):
@@ -50,17 +45,14 @@ def import_XLSX(path, file_name=None, numpy_array=False, index_col=0):
             mat = pd.read_excel(path + file_name, index_col=index_col, header=0)
             return mat.to_numpy()
 
-# Read data from a .mat file
-# ----------------------------------------------------------------------------------------------
-# Inputs:
-# path (string): a file path to the folder that contains the file(s)
-# file_name (string): optional input with default value None. If the value is None, then function will
-#                     load every .xlsx file in the path specified. Otherwise, it will open the file_name
-#                     specified from user input.
-# numpyArray (boolean): optional flag for deciding if the read input should be returned as a Panda
-#                       dataframe or a numpy array. Default value is False (return as Panda Dataframes)
-# ----------------------------------------------------------------------------------------------
 def import_MAT(path, file_name=None):
+    """
+    Read data from a .mat file
+    :param path: file path to the folder that contains the file(s)
+    :param file_name: optional input with default value None. If the value is None, then function will load every .xlsx
+    file in the path specified. Otherwise, it will open the file_name specified from user input.
+    :return: data read from .MAT files
+    """
     if file_name is None:
         MAT_files_name = []
         MAT_files = []
@@ -77,18 +69,16 @@ def import_MAT(path, file_name=None):
         print(data.keys())
         return data
 
-
-# --------------------------------------------------------------------------------------------- Pickling Data
-# Pickles data stored in the data variable
-# ----------------------------------------------------------------------------------------------
-# Inputs:
-#
-# ----------------------------------------------------------------------------------------------
 def save_to_pickle(data, path, pickle_name):
-    if '.pkl' in pickle_name:
-        pickle_name = pickle_name[:len(pickle_name)-4] + f'-{DATE}.pkl'
-    else:
-        pickle_name += f'-{DATE}.pkl'
+    """
+    Save some data to a pickle.
+    :param data: data to be saved
+    :param path: path to save location
+    :param pickle_name: name of pickle file
+    :return:
+    """
+    if '.pkl' not in pickle_name:
+        pickle_name += '.pkl'
     file_path = os.path.join(path, pickle_name)
     __check_path(file_path)
     with open(file_path, 'wb') as f:
@@ -97,6 +87,12 @@ def save_to_pickle(data, path, pickle_name):
     print(f"Saved to {file_path}.")
 
 def load_from_pickle(path, pickle_name):
+    """
+    Load data from a pickle
+    :param path: path to file location
+    :param pickle_name: pickle name to be read
+    :return: data stored in pickle
+    """
     file_path = os.path.join(path, pickle_name)
     if os.path.exists(file_path):
         with open(file_path, 'rb') as f:
@@ -105,6 +101,33 @@ def load_from_pickle(path, pickle_name):
     else:
         return []
 
+def find_file(path, keyword, ext='.pkl'):
+    for root, dirs, files in os.walk(path):
+        for file in (files):
+            if not file.endswith(ext):
+                continue
+            if keyword not in file:
+                continue
+
+            with open(root + file, 'rb') as f:
+                data = pkl.load(f)
+            return data, file
+    print("Could not find file.")
+    return 0
+
+def load_all_pickles(path, keyword=""):
+    all_data = {}
+    for root, dirs, files in os.walk(path):
+        for file in (files):
+            if not file.endswith('.pkl'):
+                continue
+            if keyword == "":
+                with open(root + file, 'rb') as f:
+                    all_data[file] = pkl.load(f)
+            elif keyword in file:
+                with open(root + file, 'rb') as f:
+                    all_data[file] = pkl.load(f)
+    return all_data
 # --------------------------------------------------------------------------------------------- BrainNet Viewer
 # Function for exporting a .node file for BrainNet Viewer
 # .node file defined as an ASCII text file with suffix 'node'
@@ -117,7 +140,19 @@ def load_from_pickle(path, pickle_name):
 # fileName: exported file .node name.
 # ----------------------------------------------------------------------------------------------
 def export_node_file(node_df, color, size, path, file_name='tempNodeFileName'):
-    file_name += f'-{DATE}.node'
+    """
+    Function for exporting a .node file for BrainNet Viewer.
+    .node file defined as an ASCII text file with suffix 'node'
+    There are 6 columns: 1-3 represent node coordinates,
+    col. 4 represents node color, col. 5 represents node size, last col. represent node label
+    :param node_df:
+    :param color:
+    :param size:
+    :param path:
+    :param file_name:
+    :return:
+    """
+    file_name += '.node'
     file_path = os.path.join(path, file_name)
     __check_path(file_path)
     with open(file_path, 'w') as writer:
@@ -128,14 +163,8 @@ def export_node_file(node_df, color, size, path, file_name='tempNodeFileName'):
     print(f"File saved to {file_name}")
 
 
-# ----------------------------------------------------------------------------------------------
-# Function for exporting a .edge file for BrainNet Viewer
-# ----------------------------------------------------------------------------------------------
-# Inputs:
-# MIGHT NOT NEED ----
-# ----------------------------------------------------------------------------------------------
 def export_edge_file(adj_df, path, file_name='tempNodeFileName', binarize=True):
-    file_name += f'-{DATE}.edge'
+    file_name += '.edge'
     file_path = os.path.join(path, file_name)
     __check_path(file_path)
     with open(file_name, 'w') as writer:

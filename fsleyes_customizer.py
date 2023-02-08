@@ -22,50 +22,78 @@ def change_image(IMAGE_PATH, data_values, rois):
     final_img.CopyInformation(itk_img)
     return final_img
 
-if __name__ == "__main__":
-    # Path to LUT file
-    LUT_PATH = 'Brain_Atlas/Cortical.nii.txt'
-    # Path to NII file
-    NII_PATH = 'Brain_Atlas/Schaefer2018_1000Parcels_7Networks_order_FSLMNI152_2mm.nii.gz'
-    # Path to Data file (used to replace image data with)
-    DATA_FILE_PATH = 'data_to_plot/'
-    # Output file path
-    OUTPUT_PATH = 'fsleyes_custom/'
-    for root, dirs, files in os.walk(DATA_FILE_PATH):
-        for file in files:
-            if not file.endswith('.txt'):
-                continue
-            input_file = DATA_FILE_PATH + file
-            print("Processing file ", input_file)
-            # make the folder structure for the outputs
-            try:
-                os.mkdir(OUTPUT_PATH)
-            except FileExistsError:
-                pass
+# Include path to file.
+def format_data(data_txt_file, lut_file):
+    with open(lut_file) as lut:
+        lut_data = lut.readlines()
+    rois = []
+    for x in lut_data:
+        x = x.rstrip('\n')
+        name = x.split(' ')[1]
+        rois.append(name)
 
-            # Take in the LUT and its values and make it into a dictionary
-            with open(LUT_PATH) as lut:
-                f = lut.readlines()
-            rois = {}
-            for x in f:
-                x = x.rstrip('\n')
-                number = x.split(' ')[0]
-                name = x.split(' ')[1]
-                intensity = x.split(' ')[2]
-                rois[name] = int(number)
+    with open(data_txt_file, 'r') as f:
+        lines = f.readlines()
 
-            # Take in the data values and make it into a dictionary
-            with open(input_file) as control_values_file:
-                lines = control_values_file.readlines()
-            data_values = {}
+    data_values = {}
+    for line in lines:
+        if len(line) == 0:
+            continue
+        line = line.rstrip('\n')
+        value = line.split(' ')[1]
+        name = line.split(' ')[0]
+        if name in rois:
+            data_values[name] = float(value)
+        else:
+            continue
+    return data_values
 
-            for line in lines:
-                line = line.rstrip('\n')
-                value = line.split(' ')[1]
-                name = line.split(' ')[0]
-                data_values[name] = float(value)
+def run_customizer(output_path, lut_path, nii_path, fname, data_values={}, data_file_path=""):
+    # make the folder structure for the outputs
+    try:
+        os.mkdir(output_path)
+    except FileExistsError:
+        pass
+    # Take in the LUT and its values and make it into a dictionary
+    with open(lut_path) as lut:
+        f = lut.readlines()
+    rois = {}
+    for x in f:
+        x = x.rstrip('\n')
+        number = x.split(' ')[0]
+        name = x.split(' ')[1]
+        intensity = x.split(' ')[2]
+        rois[name] = int(number)
 
-            # Go through the rois that we have values for and change their intensity values to the controllability value
-            new_img = change_image(NII_PATH, data_values, rois)
-            fname = os.path.splitext(file)[0]
-            sitk.WriteImage(new_img, fileName=OUTPUT_PATH + f'{fname}.nii.gz')
+    if len(data_values) != 0:
+        # Use loaded data.
+        # Go through the rois that we have values for and change their intensity values to the controllability value
+        new_img = change_image(nii_path, data_values, rois)
+        sitk.WriteImage(new_img, fileName=output_path + f'{fname}.nii.gz')
+        return "Done."
+    elif len(data_file_path) != 0:
+        for root, dirs, files in os.walk(data_file_path):
+            for file in files:
+                if not file.endswith('.txt'):
+                    continue
+                input_file = data_file_path + file
+                print("Processing file ", input_file)
+
+                # Take in the data values and make it into a dictionary
+                with open(input_file) as control_values_file:
+                    lines = control_values_file.readlines()
+                data_values = {}
+
+                for line in lines:
+                    line = line.rstrip('\n')
+                    value = line.split(' ')[1]
+                    name = line.split(' ')[0]
+                    data_values[name] = float(value)
+
+                # Go through the rois that we have values for and change their intensity values to the controllability value
+                new_img = change_image(nii_path, data_values, rois)
+                fname = os.path.splitext(file)[0]
+                sitk.WriteImage(new_img, fileName=output_path + f'{fname}.nii.gz')
+        return "Done."
+    else:
+        return "ERROR. Missing data input."

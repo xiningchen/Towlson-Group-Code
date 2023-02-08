@@ -1,5 +1,5 @@
 # Group code for starting programming in python related to brain data
-See 'example_demo.ipynb' for examples of using functions in python files
+See 'example_demo.ipynb' for examples of using functions in python files (WIP)
 
 ### Input / output (data_io.py)
 * Functions for reading in excel data of brain scans or MATLAB data
@@ -9,10 +9,21 @@ See 'example_demo.ipynb' for examples of using functions in python files
 * Function for averaging brain connectomes
 * Function for getting basic network statistics (WIP)
 
-### Functional Brain Community Detection with bctpy
-* Function for finding a good resolution parameter value for Louvain detection
-* Function for Louvain community detection with finer grain
-* Function for plotting partition (WIP)
+### Community Detection with bctpy
+* community_detection_process.ipynb 
+  * Process for finding best gamma range to detect functional networks in the human brain 
+  * Creates input pickle to run community detection on ARC
+* louvain_using_script.py 
+  * Python code that will perform community detection given input parameters
+  * Called from the script_louvain.slurm script 
+* script_louvain.slurm 
+  * ARC script for running louvain_using_script.py
+  * See below about ARC cluster guide 
+* OVARIAN_functions.py
+  * Supporting functions used in the Ovarian Project
+* functional_brain_community
+  * Functions for community detection
+
 
 ### Resources/References 
 * [Brain Connectivity Toolbox (Python)](https://pypi.org/project/bctpy/)
