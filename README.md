@@ -4,29 +4,19 @@ This is a repository of some functions and code I used frequently while working 
 The initial idea was to have a example/demo notebook to go through how to read in some brain network data, create a network object, and compute some network metrics about the graph. Sadly I realized it is hard to do that because the brain data I have is confidential, so I cannot upload them to the internet willy nilly. If you're reading this because you're a new student that just joined our lab, you'll probably have your own brain data in the format of some .xlsx file or .mat file (MATLAB file). Start by checking out the data_io.py Python file that includes some functions on how you can read those files and create a NetworkX graph object (this is your brain network!)  
 
 ### Input / output (data_io.py)
-* Functions for reading in excel data of brain scans or MATLAB data
-* Exporting brain connectome in BrainNet Viewer format (.node and .edge files)
+- [X] Functions for reading in excel data of brain scans or MATLAB data
+- [X] Exporting brain connectome in BrainNet Viewer format (.node and .edge files)
+If your audience is from the network science community, BrainNet Viewer is a good visualization tool to show information about your network. You would be looking to get some images like the following: 
+<-- need to upload some images here -->
+- [ ] Visualizing brain connectome in FSLEyes
+If your audience is from neuroscience/biology background, BrainNet Viewer really confuses them. Instead I recommend using FSLEyes. Many of them might already use FSLeyes or something similar in their lab. You would get images like this if you use FSLEyes: 
+<-- need to upload some images here -->
+FSLEyes is a bit more confusing to use because there's two ways you can produce an image. I need to figure out how I can explain it in a notebook... (WIP)
 
 ### Brain connectomes (WIP - brain_network.py)
-* Function for averaging brain connectomes
-* Function for getting basic network statistics (WIP)
+- [X] Function for averaging brain connectomes
+- [ ] Function for getting basic network statistics (WIP)
 
-Will be removing this since it mostly belongs to the OAM project, which I've created a separate repository for. 
-~~### Community Detection with bctpy
-* community_detection_process.ipynb 
-  * Process for finding best gamma range to detect functional networks in the human brain 
-  * Creates input pickle to run community detection on ARC
-* louvain_using_script.py 
-  * Python code that will perform community detection given input parameters
-  * Called from the script_louvain.slurm script 
-* script_louvain.slurm 
-  * ARC script for running louvain_using_script.py
-  * See below about ARC cluster guide 
-* OVARIAN_functions.py
-  * Supporting functions used in the Ovarian Project
-* functional_brain_community
-  * Functions for community detection
-~~
 
 ### Resources/References 
 * [Brain Connectivity Toolbox (Python)](https://pypi.org/project/bctpy/)
