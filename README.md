@@ -7,9 +7,17 @@ The initial idea was to have a example/demo notebook to go through how to read i
 - [X] Functions for reading in excel data of brain scans or MATLAB data
 - [X] Exporting brain connectome in BrainNet Viewer format (.node and .edge files)
 If your audience is from the network science community, BrainNet Viewer is a good visualization tool to show information about your network. You would be looking to get some images like the following: 
-<img src="figures/BrainNet_Viewer_1.png" alt="Example 1" width=30% height=auto>
-<img src="figures/BrainNet_Viewer_2.png" alt="Example 2" width=30% height=auto>
-<img src="figures/BrainNet_Viewer_3.png" alt="Example 3" width=30% height=auto>
+<div class="row">
+  <div class="column">
+    <img src="figures/BrainNet_Viewer_1.png" alt="Example 1" style="width:30%">
+  </div>
+  <div class="column">
+    <img src="figures/BrainNet_Viewer_2.png" alt="Example 2" style="width:30%">
+  </div>
+  <div class="column">
+    <img src="figures/BrainNet_Viewer_3.png" alt="Example 3" style="width:30%">
+  </div>
+</div>
 
 
 - [ ] Visualizing brain connectome in FSLEyes
