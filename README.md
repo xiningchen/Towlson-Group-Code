@@ -1,5 +1,7 @@
-# Group code for starting programming in python related to brain data
-See 'example_demo.ipynb' for examples of using functions in python files (WIP)
+# Introductory programming tutorial for brain networks
+This is a repository of some functions and code I used frequently while working in Emma Towlson's Network Neuroscience lab. I also included links/references to other resources that I've had to use during my master's research project. I hope this will act as a landing point for others to easily get resources/help. The target audience are beginner research students joining the lab and starting to work with brain network data. 
+
+The initial idea was to have a example/demo notebook to go through how to read in some brain network data, create a network object, and compute some network metrics about the graph. Sadly I realized it is hard to do that because the brain data I have is confidential, so I cannot upload them to the internet willy nilly. If you're reading this because you're a new student that just joined our lab, you'll probably have your own brain data in the format of some .xlsx file or .mat file (MATLAB file). Start by checking out the data_io.py Python file that includes some functions on how you can read those files and create a NetworkX graph object (this is your brain network!)  
 
 ### Input / output (data_io.py)
 * Functions for reading in excel data of brain scans or MATLAB data
@@ -9,7 +11,8 @@ See 'example_demo.ipynb' for examples of using functions in python files (WIP)
 * Function for averaging brain connectomes
 * Function for getting basic network statistics (WIP)
 
-### Community Detection with bctpy
+Will be removing this since it mostly belongs to the OAM project, which I've created a separate repository for. 
+~~### Community Detection with bctpy
 * community_detection_process.ipynb 
   * Process for finding best gamma range to detect functional networks in the human brain 
   * Creates input pickle to run community detection on ARC
@@ -23,7 +26,7 @@ See 'example_demo.ipynb' for examples of using functions in python files (WIP)
   * Supporting functions used in the Ovarian Project
 * functional_brain_community
   * Functions for community detection
-
+~~
 
 ### Resources/References 
 * [Brain Connectivity Toolbox (Python)](https://pypi.org/project/bctpy/)

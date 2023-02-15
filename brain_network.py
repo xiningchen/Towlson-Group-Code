@@ -12,6 +12,9 @@ from tqdm import tqdm
 from datetime import datetime
 import networkx as nx
 import fsleyes_customizer as fsleyes
+import statistics as stats
+from collections import Counter
+import data_io as myFunc
 
 # Global variables
 DATE = datetime.today().strftime('%Y-%m-%d')
@@ -81,6 +84,13 @@ def get_network_stats2(G):
     avg_node_strength = [x[1] for x in node_strengths]
     result['avg_weight'] = sum(avg_node_strength) / len(avg_node_strength)
     return result
+
+def get_community_to_node_map(communities, nodeMetaData):
+    nodeList = list(nodeMetaData.index)
+    community_to_node_list = {c: [] for c in communities.values()}
+    for n in nodeList:
+        community_to_node_list[communities[nodeMetaData['Functional_System'][n]]].append(n)
+    return community_to_node_list
 
 # Calculate WEIGHTED z-score of each node for a graph G. Returns zscore data in groups.
 def get_zscore(G, communities, community_to_node_list):
@@ -192,8 +202,6 @@ def create_cortical_lut(partition, fname):
         my_file_content += ' '.join(vec)
     with open(f"../Ovarian_hormone/Brain_Atlas/custom_lut/{fname}.lut", 'w') as output_file:
         output_file.write(my_file_content)
-
-
 
 def create_subcortical_lut(partition, fname):
     color_rgb = {0: [255, 51, 51], 1: [102, 179, 255], 2: [179, 102, 255], 3: [255, 179, 102], 4: [0, 153, 77],
