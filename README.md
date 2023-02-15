@@ -6,11 +6,14 @@ The initial idea was to have a example/demo notebook to go through how to read i
 ### Input / output (data_io.py)
 - [X] Functions for reading in excel data of brain scans or MATLAB data
 - [X] Exporting brain connectome in BrainNet Viewer format (.node and .edge files)
+
 If your audience is from the network science community, BrainNet Viewer is a good visualization tool to show information about your network. You would be looking to get some images like the following: 
 <img src="figures/BNV_examples.png"  width=80% height=auto>
 
 
 - [ ] Visualizing brain connectome in FSLEyes
+
+
 If your audience is from neuroscience/biology background, BrainNet Viewer really confuses them. Instead I recommend using FSLEyes. Many of them might already use FSLeyes or something similar in their lab. You would get images like this if you use FSLEyes: 
 <img src="figures/FSLEyes_1.png"  width=80% height=auto>
 FSLEyes is a bit more confusing to use because there's two ways you can produce an image. I need to figure out how I can explain it in a notebook... (WIP)
