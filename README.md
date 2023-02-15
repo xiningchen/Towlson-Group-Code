@@ -16,7 +16,7 @@ If your audience is from the network science community, BrainNet Viewer is a goo
 
 If your audience is from neuroscience/biology background, BrainNet Viewer really confuses them. Instead I recommend using FSLEyes. Many of them might already use FSLeyes or something similar in their lab. You would get images like this if you use FSLEyes: 
 <img src="figures/FSLEyes_1.png"  width=80% height=auto>
-FSLEyes is a bit more confusing to use because there's two ways you can produce an image. I need to figure out how I can explain it in a notebook... (WIP)
+
 
 ### Brain connectomes (WIP - brain_network.py)
 - [X] Function for averaging brain connectomes
