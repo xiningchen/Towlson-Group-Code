@@ -8,11 +8,9 @@ The initial idea was to have a example/demo notebook to go through how to read i
 - [X] Exporting brain connectome in BrainNet Viewer format (.node and .edge files)
 If your audience is from the network science community, BrainNet Viewer is a good visualization tool to show information about your network. You would be looking to get some images like the following: 
 <img src="figures/BrainNet_Viewer_1.png" alt="Example 1" width=30% height=auto>
-![BrainNet Viewer Example 1](figures/BrainNet_Viewer_1.png "Example 1")
 <img src="figures/BrainNet_Viewer_2.png" alt="Example 2" width=30% height=auto>
-![BrainNet Viewer Example 2](figures/BrainNet_Viewer_2.png "Example 2")
 <img src="figures/BrainNet_Viewer_3.png" alt="Example 3" width=30% height=auto>
-![BrainNet Viewer Example 3](figures/BrainNet_Viewer_3.png "Example 3")
+
 
 - [ ] Visualizing brain connectome in FSLEyes
 If your audience is from neuroscience/biology background, BrainNet Viewer really confuses them. Instead I recommend using FSLEyes. Many of them might already use FSLeyes or something similar in their lab. You would get images like this if you use FSLEyes: 
