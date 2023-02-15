@@ -1,22 +1,3 @@
-<style>
-* {
-  box-sizing: border-box;
-}
-
-.column {
-  float: left;
-  width: 33.33%;
-  padding: 5px;
-}
-
-/* Clearfix (clear floats) */
-.row::after {
-  content: "";
-  clear: both;
-  display: table;
-}
-</style>
-
 # Introductory programming tutorial for brain networks
 This is a repository of some functions and code I used frequently while working in Emma Towlson's Network Neuroscience lab. I also included links/references to other resources that I've had to use during my master's research project. I hope this will act as a landing point for others to easily get resources/help. The target audience are beginner research students joining the lab and starting to work with brain network data. 
 
@@ -26,17 +7,7 @@ The initial idea was to have a example/demo notebook to go through how to read i
 - [X] Functions for reading in excel data of brain scans or MATLAB data
 - [X] Exporting brain connectome in BrainNet Viewer format (.node and .edge files)
 If your audience is from the network science community, BrainNet Viewer is a good visualization tool to show information about your network. You would be looking to get some images like the following: 
-<div class="row">
-  <div class="column">
-    <img src="figures/BrainNet_Viewer_1.png" alt="Example 1" style="width:30%">
-  </div>
-  <div class="column">
-    <img src="figures/BrainNet_Viewer_2.png" alt="Example 2" style="width:30%">
-  </div>
-  <div class="column">
-    <img src="figures/BrainNet_Viewer_3.png" alt="Example 3" style="width:30%">
-  </div>
-</div>
+![BrainNet Viewer Examples](figures/BNV_examples.png "Examples")
 
 
 - [ ] Visualizing brain connectome in FSLEyes
