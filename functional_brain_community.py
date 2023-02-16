@@ -1,3 +1,14 @@
+"""
+Functions for creating partitions (community detection) for functional brain connectomes.
+Also includes two partition comparison metrics used in literature:
+- Normalized Mutual Information (NMI)
+- Variation of Information (VI)
+These two are effectively the same, just inverse of each other. NMI measures how similar two partitions are and VI
+measures how different two partitions are. Just pick one.
+
+Last updated: Feb. 16 2023
+Author(s): Xining Chen
+"""
 from collections import Counter
 import networkx as nx
 from math import log
@@ -6,11 +17,14 @@ from tqdm import tqdm
 import bct
 import matplotlib.cm as cm
 from sklearn.metrics.cluster import normalized_mutual_info_score
-import statistics as stat
 
 
-# Given a list of partition, convert format to a list of clusters format
 def get_clusters(partition):
+    """
+    Convert partition format to a list of clusters format
+    :param partition: community structure breakdown (list with a community number at the node's index)
+    :return: community cluster format, where the nodes within the same community are listed together.
+    """
     c = Counter(partition)
     N = len(c)
     reindex = dict(zip(c.keys(), range(N)))
@@ -20,12 +34,16 @@ def get_clusters(partition):
     return clustering
 
 
-# Variation of information (VI)
-#
-# Meila, M. (2007). Comparing clusterings-an information
-#   based distance. Journal of Multivariate Analysis, 98,
-#   873-895. doi:10.1016/j.jmva.2006.11.013
 def variation_of_information(X, Y):
+    """
+    Variation of information (VI).
+    Meila, M. (2007). Comparing clusterings-an information
+    based distance. Journal of Multivariate Analysis, 98,
+    873-895. doi:10.1016/j.jmva.2006.11.013
+    :param X:
+    :param Y:
+    :return:
+    """
     n = float(len(X))
     cluster_1 = get_clusters(X)
     cluster_2 = get_clusters(Y)
@@ -48,19 +66,18 @@ def variation_of_information(X, Y):
 
 
 def community_stats(partitions_by_gamma, similarity_by_gamma):
-    # For each gamma, plot the list of similarity values (NMI)
+    """
+
+    :param partitions_by_gamma:
+    :param similarity_by_gamma:
+    :return:
+    """
     rep_part = []
     avg_stability = []
     std_dev_stab = []
     variance_stab = []
     for r, sim_list in tqdm(similarity_by_gamma.items()):
         list_of_partitions = partitions_by_gamma[r]
-        # avg_communities = 0
-        # for part in list_of_partitions:
-        #     avg_communities += len(Counter(part))
-        # avg_communities = avg_communities / len(list_of_partitions)
-        # if avg_communities < 6 or avg_communities > 25:
-        #     continue
         rep_part.append(get_best_partition(list_of_partitions))
         # avg_stability.append(stat.mean(sim_list))
         # std_dev_stab.append(stat.stdev(sim_list))
@@ -68,9 +85,12 @@ def community_stats(partitions_by_gamma, similarity_by_gamma):
     return rep_part, avg_stability, std_dev_stab, variance_stab
 
 
-# return the best partition from a set of partitions.
-# "Best" partition is defined here as the most similar partition to the ensemble for a particular gamma.
 def get_best_partition(partitions):
+    """
+    Get the best partition from a set of partitions. "Best" partition is defined here as the most similar partition to the ensemble for a particular gamma.
+    :param partitions: list of partitions
+    :return: the best (most similar by Normalized Mutual Information) partition
+    """
     if len(partitions) == 1:
         return partitions[0]
     avg_similarity_per_partition = [0] * len(partitions)
@@ -87,23 +107,35 @@ def get_best_partition(partitions):
     max_sim_i = avg_similarity_per_partition.index(max_sim)
     return partitions[max_sim_i]
 
-def community_by_modularity_stability(W, g, B='modularity', rep=2):
-    count = 0
-    stability = 0
-    modularity = []
+
+def get_partitions(W, gamma, B='modularity', rep=2):
+    """
+    Run Louvain community detection algorithm. The Louvain community detection used here can be applied to networks with
+    negative weights.
+    :param W: Directed/undirected weighted/binary adjacency matrix.
+    :param gamma: resolution parameter
+    :param B: Various adaptation of Louvain. If you have negative weights, used 'negative_asym'.
+    :param rep: How many times to repeat community detection for a specific gamma.
+    :return: list of partitions, list of modularity for each partition
+    """
     partitions = []
+    modularity = []
     for i in range(rep):
-        partition, q = bct.community_louvain(W, gamma=g, B=B)
+        partition, q = bct.community_louvain(W, gamma=gamma, B=B)
         partitions.append(partition)
         modularity.append(q)
-        if len(partitions) > 1:
-            for p in partitions:
-                stability += normalized_mutual_info_score(p, partition)
-                count += 1
-    return partitions, modularity, stability
+    return partitions, modularity
+
 
 def draw_community(G, partition):
-    # print(community_louvain.modularity(partition, G))
+    """
+    Draw the network G given it's community structure (partition).
+    Only use this to get a sense if the community_by_modularity_stability function above is working.
+    Avoid visualizing a brain network like this.
+    :param G: network x graph object
+    :param partition: community structure of G
+    :return:
+    """
     pos = nx.spring_layout(G)
     cmap = cm.get_cmap('viridis', max(partition.values()) + 1)
     nx.draw_networkx_nodes(G, pos, partition.keys(), node_size=40, cmap=cmap, node_color=list(partition.values()))
