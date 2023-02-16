@@ -3,7 +3,7 @@
 
 1. Get a free MATLAB license through your university. If you're from UoC, you can go [here](https://iac01.ucalgary.ca/SDSWeb/LandingPage.aspx?ReturnUrl=%2fSDSWeb%2fdefault.aspx).
 <img src="../figures/matlab_license.png" width="50%" height=auto>
-2. Download BrainNet Viewer [here](https://www.nitrc.org/projects/bnv/). (The MATLAB version is called "matlab code")
+2. Download BrainNet Viewer [here](https://www.nitrc.org/projects/bnv). (The MATLAB version is called "matlab code")
 3. Whatever you unzip, drag all the folders into your MATLAB folder.
 (You should have a MATLAB folder which is your default path setting for MATLAB when it starts.)
 
