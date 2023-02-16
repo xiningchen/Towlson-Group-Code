@@ -1,10 +1,16 @@
 # Introductory programming tutorial for brain networks
 This is a repository of some functions and code I used frequently while working in Emma Towlson's Network Neuroscience lab. I also included links/references to other resources that I've had to use during my master's research project. I hope this will act as a landing point for others to easily get resources/help. The target audience are beginner research students joining the lab and starting to work with brain network data. 
 
-The initial idea was to have a example/demo notebook to go through how to read in some brain network data, create a network object, and compute some network metrics about the graph. Sadly I realized it is hard to do that because the brain data I have is confidential, so I cannot upload them to the internet willy nilly. If you're reading this because you're a new student that just joined our lab, you'll probably have your own brain data in the format of some .xlsx file or .mat file (MATLAB file). Start by checking out the data_io.py Python file that includes some functions on how you can read those files and create a NetworkX graph object (this is your brain network!)  
+The initial idea was to have a example/demo notebook to go through how to read in some brain network data, create a network object, and compute some network metrics about the graph. Sadly I realized it is hard to do that because the brain data I have is confidential, so I cannot upload them to the internet. If you're reading this because you're a new student that just joined our lab, you'll probably have your own brain data in the format of some .xlsx file or .mat file (MATLAB file). Start by checking out the data_io.py Python file that includes some functions on how you can read those files and create a NetworkX graph object (this is your brain network!)  
 
-## Starting code (data_io.py)
+## Starting code 
+data_io.py
 - [X] Functions for reading i brain connectome data stored as .XLSX or MATLAB files
+
+WIP - brain_network.py
+- [X] Function for averaging brain connectomes
+- [X] Function for getting basic network statistics (need cleaning up)
+
 
 ## Visualizations 
 ### BrainNet Viewer
@@ -16,11 +22,6 @@ If your audience is from the network science community, BrainNet Viewer is a goo
 If your audience is from neuroscience/biology background, BrainNet Viewer really confuses them because of the "glass brain" situation; try using FSLEyes instead. Many of them might already use FSLeyes or something similar in their lab. You would get images like this if you use FSLEyes: 
 
 <img src="figures/FSLEyes_1.png"  width=80% height=auto>
-
-
-### Brain connectomes (WIP - brain_network.py)
-- [X] Function for averaging brain connectomes
-- [ ] Function for getting basic network statistics (WIP)
 
 
 ### Resources/References 
