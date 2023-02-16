@@ -3,7 +3,7 @@
 
 1. Get a free MATLAB license through your university. If you're from UoC, you can go [here](https://iac01.ucalgary.ca/SDSWeb/LandingPage.aspx?ReturnUrl=%2fSDSWeb%2fdefault.aspx).
 <img src="../figures/matlab_license.png" width="50%" height=auto>
-2. Download [BrainNet Viewer](https://www.nitrc.org/projects/bnv/). (The MATLAB version is called "matlab code")
+2. Download BrainNet Viewer [here](https://www.nitrc.org/projects/bnv/). (The MATLAB version is called "matlab code")
 3. Whatever you unzip, drag all the folders into your MATLAB folder.
 (You should have a MATLAB folder which is your default path setting for MATLAB when it starts.)
 
@@ -25,7 +25,7 @@ Click on the load file icon. You'll see 4 possible input files:
 4. mapping file - ignore
 
 Go next, and the BrainNet Option window should automatically appear. 
-![Start BrainNet Viewer] (figures/brainnet_viewer_demo_load.gif "Demo")
+![Start BrainNet Viewer] (../figures/brainnet_viewer_demo_load.gif "Demo")
 Check out the brainnet_viewer_tutorial notebook to create files for BrainNet Viewer. 
 
 # Viewing the .node in BrainNet Viewer Application
