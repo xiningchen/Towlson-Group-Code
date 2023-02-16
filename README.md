@@ -3,18 +3,18 @@ This is a repository of some functions and code I used frequently while working 
 
 The initial idea was to have a example/demo notebook to go through how to read in some brain network data, create a network object, and compute some network metrics about the graph. Sadly I realized it is hard to do that because the brain data I have is confidential, so I cannot upload them to the internet willy nilly. If you're reading this because you're a new student that just joined our lab, you'll probably have your own brain data in the format of some .xlsx file or .mat file (MATLAB file). Start by checking out the data_io.py Python file that includes some functions on how you can read those files and create a NetworkX graph object (this is your brain network!)  
 
-### Input / output (data_io.py)
-- [X] Functions for reading in excel data of brain scans or MATLAB data
-- [X] Exporting brain connectome in BrainNet Viewer format (.node and .edge files)
+## Starting code (data_io.py)
+- [X] Functions for reading i brain connectome data stored as .XLSX or MATLAB files
 
-If your audience is from the network science community, BrainNet Viewer is a good visualization tool to show information about your network. You would be looking to get some images like the following: 
+## Visualizations 
+### BrainNet Viewer
+If your audience is from the network science community, BrainNet Viewer is a good visualization tool to show information about your network. See the BrainNet Viewer folder for a tutorial. You would be looking to get some images like the following: 
+
 <img src="figures/BNV_examples.png"  width=80% height=auto>
 
+### FSLeyes
+If your audience is from neuroscience/biology background, BrainNet Viewer really confuses them because of the "glass brain" situation; try using FSLEyes instead. Many of them might already use FSLeyes or something similar in their lab. You would get images like this if you use FSLEyes: 
 
-- [ ] Visualizing brain connectome in FSLEyes
-
-
-If your audience is from neuroscience/biology background, BrainNet Viewer really confuses them. Instead I recommend using FSLEyes. Many of them might already use FSLeyes or something similar in their lab. You would get images like this if you use FSLEyes: 
 <img src="figures/FSLEyes_1.png"  width=80% height=auto>
 
 
