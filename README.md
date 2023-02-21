@@ -34,3 +34,6 @@ support@hpc.ucalgary.ca and they can help get it installed.
 	- The [Compute Canada wiki](https://docs.computecanada.ca/wiki/Installing_software_in_your_home_directory) has some info on installing software that might be useful.
 	- [Apply for ARC](https://rcs.ucalgary.ca/How_to_get_an_account)
 * [VPN UoC](https://iac01.ucalgary.ca/SDSWeb/LandingPage.aspx?ReturnUrl=%2fSDSWeb%2fdefault.aspx)
+* [Schaefer2018 cortex atlas](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/MNI)
+* [Tian subcortex atlas](https://github.com/yetianmed/subcortex)
+

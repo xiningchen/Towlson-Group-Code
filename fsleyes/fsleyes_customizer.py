@@ -1,7 +1,7 @@
 import os
 import SimpleITK as sitk
 from collections import Counter
-import data_io as myFunc
+from .. import data_io as myFunc
 import numpy as np
 
 
@@ -99,6 +99,20 @@ def run_customizer(output_path, lut_path, nii_path, fname, data_values={}, data_
 
 
 def export_for_fsleyes(project, partition, fname, btype, reindex="top8"):
+    """
+    Create a new .nii file to import into FSLeyes. The .nii file is the image file that contains each node. Think of
+    this function as modifying the *image* file of the brain atlas so that the image contains the partition information.
+    :param project: project folder name to save to.
+    :param partition: grouping of nodes in a network
+    :param fname: output file name
+    :param btype: a string, either "cortical", "subcortical", or "both"
+    :param reindex: a string, either "top8", "+1", or something else. This is the encoding of the partition so that the
+    .nii file output can have the same index information to create consistent coloring. "top8" will reindex the partition
+    so that the modules are labelled from largest module size (1) to smallest module size (m). "+1" will take the
+    module labels and add 1. Assuming module index is positive, this will remove any module with label 0, since 0 in
+    FSLEyes is transparent. If neither strings are used, then there will be no re-labelling of the input partition.
+    :return: None. Creates a fname.nii.gz file.
+    """
     DATA_PATH = f'../../{project}/data/'
     FILE = fname + '.txt'
     # ---- PART 1
@@ -151,11 +165,32 @@ def export_for_fsleyes(project, partition, fname, btype, reindex="top8"):
                                data_values=formatted_data)
 
 
-def create_cortical_lut(partition, fname):
+def create_cortical_lut(partition, fname, lut_fname = 'Schaefer2018_1000Parcels_7Networks_order.lut'):
+    """
+    Creates a .lut file for the Schaefer2018 cortical Atlas. A LUT file is a Look Up Table which is used to visualize
+    .nii files in FSLeyes. The look-up table will assign a value to each node in the brain atlas. This function
+    will simply modify an existing brain atlas LUT file so that the value associated with each node corresponds to the
+    module label of that node.
+    The reasons you should use this function to create LUT files instead of "export_for_fsleyes" for visualizing community
+    structure are:
+        1. Faster - a LUT file is a much smaller file than an .nii image file. It's overlaying additional information
+        rather than modifying a medical image file.
+        2. Safer - with neuro-imaging files, there's specific orientation and format for each image. Modifying the image
+        itself may accidentally change/didn't copy over certain meta info for the image. Modifying a LUT file doesn't
+        have these problems.
+        3. Consistent with others - Pretty sure this is the way neurologists use LUT file and the purpose of a LUT file.
+        I've seen LUT files used in other labs for the exact same purpose (displaying community structure).
+    Only use the "export_for_fsleyes" if you don't have a template LUT file for the brain atlas you're using.
+    Note: Different atlases have different LUT formats. This function is built for the Schaefer2018 Atlas. May need to
+    modify the inner for-loop for different Atlases. See "create_subcortical_lut" for an example.
+    :param partition: community partition
+    :param fname: output LUT file name
+    :param lut_fname: path (including file name) of the template LUT file for a brain atlas
+    :return: None. Creates a .lut in listed path.
+    """
     color_rgb = {0: [255, 51, 51], 1: [102, 179, 255], 2: [179, 102, 255], 3: [255, 179, 102], 4: [0, 153, 77],
                  5: [255, 204, 255], 6: [245, 211, 20], 7: [201, 0, 117], 8: [128, 128, 128], -1: [0, 0, 0]}
-    lut_f = '../Ovarian_hormone/Brain_Atlas/Schaefer2018_1000Parcels_7Networks_order.lut'
-    f = open(lut_f, "r")
+    f = open(lut_fname, "r")
     file_content = f.readlines()
     f.close()
     my_file_content = ""
@@ -164,15 +199,25 @@ def create_cortical_lut(partition, fname):
         for i in range(1, 4):
             vec[i] = str(round(color_rgb[partition[l]][i - 1] / 255, 5))
         my_file_content += ' '.join(vec)
-    with open(f"../Ovarian_hormone/Brain_Atlas/custom_lut/{fname}.lut", 'w') as output_file:
+    with open(f"custom_lut/{fname}.lut", 'w') as output_file:
         output_file.write(my_file_content)
 
 
-def create_subcortical_lut(partition, fname):
+def create_subcortical_lut(partition, fname, lut_fname = 'Subcortical.nii.txt'):
+    """
+    Creates a .lut file for the Tian subcortex Atlas. Note: this function is built for a brain network that contains both
+    cortical and subcortical nodes. The cortical nodes comes from the Schaefer2018 cortical Atlas while the subcortical
+    nodes uses the Tian subcortex Atlas. The Schaefer2018 atlas contains 1000 nodes which is always the first 1000 entries
+    in the partition. The subcortical nodes are all nodes after the first 1000 nodes. Depending on the atlas/combined
+    atlas you use, modify the for-loop.
+    :param partition: community partition
+    :param fname: output .LUT file name
+    :param lut_fname: template .lut file
+    :return: None. Creates a .lut in listed path.
+    """
     color_rgb = {0: [255, 51, 51], 1: [102, 179, 255], 2: [179, 102, 255], 3: [255, 179, 102], 4: [0, 153, 77],
                  5: [255, 204, 255], 6: [245, 211, 20], 7: [201, 0, 117], 8: [128, 128, 128], -1: [0, 0, 0]}
-    lut_f = '../Ovarian_hormone/Brain_Atlas/Subcortical.nii.txt'
-    f = open(lut_f, "r")
+    f = open(lut_fname, "r")
     file_content = f.readlines()
     f.close()
     my_file_content = ""
@@ -183,5 +228,5 @@ def create_subcortical_lut(partition, fname):
                            f"{round(color_rgb[partition[1000 + l]][2] / 255, 5)} " \
                            f"{vec[1]}\n"
 
-    with open(f"../Ovarian_hormone/Brain_Atlas/custom_lut/{fname}_subcortex.lut", 'w') as output_file:
+    with open(f"custom_lut/{fname}_subcortex.lut", 'w') as output_file:
         output_file.write(my_file_content)
