@@ -162,10 +162,10 @@ def export_for_fsleyes(project, partition, fname, btype, reindex="top8"):
         data_txt_file = absolute_path + 'data_to_plot/' + FILE
         formatted_data = format_data(data_txt_file, lut_file)
         run_customizer(output_path, lut_file, nii_file, fname=f'{FILE[:len(FILE) - 4]}_{btype}',
-                               data_values=formatted_data)
+                       data_values=formatted_data)
 
 
-def create_cortical_lut(partition, fname, lut_fname = 'Schaefer2018_1000Parcels_7Networks_order.lut'):
+def create_cortical_lut(partition, fname, lut_fname='Schaefer2018_1000Parcels_7Networks_order.lut'):
     """
     Creates a .lut file for the Schaefer2018 cortical Atlas. A LUT file is a Look Up Table which is used to visualize
     .nii files in FSLeyes. The look-up table will assign a value to each node in the brain atlas. This function
@@ -203,7 +203,7 @@ def create_cortical_lut(partition, fname, lut_fname = 'Schaefer2018_1000Parcels_
         output_file.write(my_file_content)
 
 
-def create_subcortical_lut(partition, fname, lut_fname = 'Subcortical.nii.txt'):
+def create_subcortical_lut(partition, fname, lut_fname='Subcortical.nii.txt'):
     """
     Creates a .lut file for the Tian subcortex Atlas. Note: this function is built for a brain network that contains both
     cortical and subcortical nodes. The cortical nodes comes from the Schaefer2018 cortical Atlas while the subcortical
@@ -228,5 +228,5 @@ def create_subcortical_lut(partition, fname, lut_fname = 'Subcortical.nii.txt'):
                            f"{round(color_rgb[partition[1000 + l]][2] / 255, 5)} " \
                            f"{vec[1]}\n"
 
-    with open(f"custom_lut/{fname}_subcortex.lut", 'w') as output_file:
+    with open(f"../Ovarian_hormone/Brain_Atlas/custom_lut/{fname}_subcortex.lut", 'w') as output_file:
         output_file.write(my_file_content)
