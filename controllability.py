@@ -3,10 +3,14 @@ import scipy.linalg as la
 import numpy as np
 import control
 
-# Modal controllability based on code from Basset
-# https://complexsystemsupenn.com/codedata
-# Definition of modal controllability from <XXX>
 def modal_control(G, stabilize=True):
+    """
+    # Modal controllability based on code from Basset
+    # https://complexsystemsupenn.com/codedata
+    :param G: numpy array connectome
+    :param stabilize: stabilize by ensuring largest e-value is 1.
+    :return: modal controllability for each node
+    """
     A = nx.to_numpy_array(G)    # Order in G.nodes()
     if stabilize:
         # Matrix norm
@@ -26,10 +30,15 @@ def modal_control(G, stabilize=True):
         modalCtrbDict[n] = phi[i]
     return modalCtrbDict
 
-# Average controllability based on code from Basset
-# https://complexsystemsupenn.com/codedata
-# Definition ?
+
 def avg_control(G, stabilize=True):
+    """
+    Average controllability based on code from Basset
+    https://complexsystemsupenn.com/codedata
+    :param G: numpy array connectome
+    :param stabilize: stabilize by ensuring largest e-value is 1.
+    :return: average controllability for each node
+    """
     A = nx.to_numpy_array(G)
     if stabilize:
         normA = la.svdvals(A)[0] + 1
@@ -47,9 +56,14 @@ def avg_control(G, stabilize=True):
         ac[n] = res[i]
     return ac
 
-# Average controllability based on new_ave_control.m - from Emma Towlson.
-# https://python-control.readthedocs.io/en/latest/control.html#system-creation
+
 def avg_control2(G):
+    """
+    Average controllability based on new_ave_control.m - from Emma Towlson.
+    https://python-control.readthedocs.io/en/latest/control.html#system-creation
+    :param G:
+    :return:
+    """
     A = nx.to_numpy_array(G)
     normA = la.svdvals(A)[0] + 1
     A = A / normA
