@@ -19,6 +19,29 @@ import matplotlib.cm as cm
 from sklearn.metrics.cluster import normalized_mutual_info_score
 
 
+def matrix_to_network_format(W, output_path):
+    """
+    Converts an adjacency matrix to network format file: node1 node2 w12
+    Some community detection algorithms only accept connectome input as a network format instead of adjacency matrix.
+    Since a functional connectome is undirected and weighted, the network format will have the same edge twice with
+    the same weight.
+    :param W: adjacency matrix (2D numpy array or 2D list) to be converted
+    :param output_path: path for the network format file.
+    :return: n/a
+    """
+    N = W.shape[0]
+    o = ""
+    for i in range(N):
+        for j in range(N):
+            if i == j:
+                continue
+            if W[i][j] == 0:
+                continue
+            o += f"{i} {j} {W[i][j]}\n"
+    with open(output_path, "w") as f:
+        f.write(o)
+
+
 def get_clusters(partition):
     """
     Convert partition format to a list of clusters format

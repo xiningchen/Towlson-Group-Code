@@ -146,3 +146,8 @@ def load_all_pickles(path, keyword=""):
                 with open(root + file, 'rb') as f:
                     all_data[file] = pkl.load(f)
     return all_data
+
+
+def write_text_file(content, path):
+    with open(path, "w") as f:
+        f.write(content)

@@ -2,7 +2,7 @@
 Functions for creating network x graphs using brain connectome data and computing a few network metrics given a
 network.
 
-Last updated: April 6, 2023
+Last updated: April 24, 2023
 Author(s): Xining Chen
 """
 import os
@@ -13,7 +13,6 @@ import networkx as nx
 import statistics as stats
 import math
 from collections import Counter
-import sys
 
 
 def get_avg_connectome(dir_path, shape, negative_weights=True):
@@ -99,6 +98,14 @@ def get_network_stats2(G):
     return result
 
 
+def get_degree_distribution(W, weighted=False):
+    # For adj. matrix W
+    np_W = np.array(W)
+    zero_W = (np_W != 0)
+
+    # For networkX graph
+
+
 def get_community_to_node_map(communities, nodeMetaData):
     """
     Converts a partition C = C1, C2, ..., Cn where Ci is the module assignment of node i to a group of node ids belonging
@@ -179,34 +186,48 @@ def flexibility(cycle_partitions):
     :param cycle_partitions: list of partitions (list). Note, this list should be ordered from time = 0 to time = l
     :return: nodal flexibility of each node in a network
     """
-    max_switches = len(cycle_partitions) - 1
-    f_i = np.zeros(len(cycle_partitions[0]))
+    partis = cycle_partitions.copy()
+    partis.append(partis[0])
+    max_switches = len(partis) - 1
+    f_i = np.zeros(len(partis[0]))
     for i in range(max_switches):
-        cur_p = cycle_partitions[i]
-        next_p = cycle_partitions[i + 1]
+        cur_p = partis[i]
+        next_p = partis[i + 1]
         switched = np.array(cur_p) != np.array(next_p)
         f_i += switched
     return f_i / max_switches
 
 
-def average_flexibility(cycle_partitions, icn_i, nodal=False):
+def average_flexibility(cycle_partitions, icn_i=-1, nodal=False):
     """
     The average flexibility of a module/network is the average of all nodal flexibility in that module.
     :param cycle_partitions: list of partitions (list). Note, this list should be ordered from time = 0 to time = l
-    :param icn_i: module id that corresponds to the module labels in the partitions
+    :param icn_i: module id that corresponds to the module labels in the partitions, default = -1 which will get flexibility
+    of all nodes.
+    :param nodal: Boolean, whether to return node level flexibility or not.
     :return: average flexibility of a module/group/network, node level flexibility
     """
-    noi_is = [j for j, ni in enumerate(cycle_partitions[0]) if ni == icn_i]
-    if len(noi_is) == 0:
-        return 0
-    f_is = flexibility(cycle_partitions)
-    avg_flex = 0
-    node_flex = [0] * 1054
-    for noi in noi_is:
+
+    N = len(cycle_partitions[0])
+    if icn_i != -1:
+        noi_is = [j for j, ni in enumerate(cycle_partitions[0]) if ni == icn_i]
+        if len(noi_is) == 0:
+            return 0, []
+        f_is = flexibility(cycle_partitions)
+        avg_flex = 0
+        node_flex = [0] * N
+        for noi in noi_is:
+            if nodal:
+                node_flex[noi] = f_is[noi]
+            avg_flex += f_is[noi]
+        return avg_flex / len(noi_is), node_flex
+    else:
+        f_is = flexibility(cycle_partitions)
+        avg_flex = sum(f_is) / len(f_is)
         if nodal:
-            node_flex[noi] = f_is[noi]
-        avg_flex += f_is[noi]
-    return avg_flex / len(noi_is), node_flex
+            return avg_flex, f_is
+        else:
+            return avg_flex, []
 
 
 def autocorrelation_fct(t, tm, icn_i):
@@ -241,7 +262,7 @@ def nodal_association_matrix(a_part):
 
 def interaction_strength(a_part, maP, k1, k2):
     """
-    Interaction strength
+    Interaction strength.
     :param a_part: a partition
     :param maP: module allegiance matrix
     :param k1: group 1 (module 1)
@@ -277,8 +298,19 @@ def average_recruitment(a_part, maP, k1):
 
 def average_integration(a_part, maP, k1, k2):
     """
-    Average integration is the between module interaction strength between two groups k1 and k2, normalized by the
-    group's internal interaction strength.
+    Average integration is the between module interaction strength
+    :param a_part: a partition
+    :param maP: module allegiance matrix
+    :param k1: group 1 (module)
+    :param k2: group 2 (module)
+    :return:
+    """
+    return interaction_strength(a_part, maP, k1, k2)
+
+
+def relative_interaction_strength(a_part, maP, k1, k2):
+    """
+    Relative interaction strength is normalizing interaction strength with group's internal interaction strength.
     :param a_part: a partition
     :param maP: module allegiance matrix
     :param k1: group 1 (module 1)
@@ -299,8 +331,10 @@ def average_integration(a_part, maP, k1, k2):
 
 def connectivity_strength(a_part, W, k1, k2=None):
     """
-    Measures the connectivity strength within or between modules. Note that this is *not* the average edge weight
-    within/between modules. Strength is a measure of the amount of connection w.r.t. maximum possible connections.
+    Measures the connectivity strength within or between modules. If k2 is None, then this calculates intraconnectivity
+    strength. Else it calculates interconnectivity strength. Note that this is *not* the average edge weight
+    within/between modules. Strength is a measure of the amount of connection w.r.t. maximum possible connections. If
+    group 1 has N1 nodes and group 2 has N2 nodes, then the maximum number of possible edges is N1*N2.
     When k2 is None, calculate within module strength of module k1. Else, calculate between module strength between
     modules k1 and k2. For weighted functional brain networks, negative edges could mean something completely
     different, hence treat positive and negative edges separately.
@@ -317,73 +351,89 @@ def connectivity_strength(a_part, W, k1, k2=None):
         k2 = k1
     k1_nodes = [i for i, v in enumerate(a_part) if v == k1]
     k2_nodes = [i for i, v in enumerate(a_part) if v == k2]
+    if len(k1_nodes) == 0 or len(k2_nodes) == 0:
+        return 0, 0
     if len(k1_nodes) <= len(k2_nodes):
         small_set = k1_nodes
         large_set = k2_nodes
     else:
         small_set = k2_nodes
         large_set = k1_nodes
-    pos_edges_count = 0
-    neg_edges_count = 0
     pos_edges_w = 0
     neg_edges_w = 0
     for n1 in small_set:
         # Positive
         between_edges = pos_W[n1, large_set]
-        pos_edges_count += np.count_nonzero(between_edges)
         pos_edges_w += sum(between_edges)
         # Negative
         between_edges = neg_W[n1, large_set]
-        neg_edges_count += np.count_nonzero(between_edges)
         neg_edges_w += sum(between_edges)
-    if pos_edges_count == 0:
-        pos_con = 0
-    else:
-        pos_con = pos_edges_w / (len(k1_nodes) * len(k2_nodes))
-        if k1 != k2:
-            pos_con *= 2
-    if neg_edges_count == 0:
-        neg_con = 0
-    else:
-        neg_con = neg_edges_w / (len(k1_nodes)*len(k2_nodes))
-        if k1 != k2:
-            neg_con *= 2
+    pos_con = pos_edges_w / (len(k1_nodes) * len(k2_nodes))
+    neg_con = neg_edges_w / (len(k1_nodes) * len(k2_nodes))
     return pos_con, neg_con
 
 
-def interconnectivity(a_part, W, k1):
+def nodal_connectivity_strength(W, k1, k2=None):
     """
-    Also called Within-module connectivity strength.
-    :param a_part: partition
-    :param W: *symmetric* weighted adjacency matrix
-    :param k1: module
-    :return: float, float
+    Measures the connectivity strength within or between sets of nodes. If k2 is None, then this calculates intraconnectivity
+    strength. Else it calculates interconnectivity strength. Note that this is *not* the average edge weight
+    within/between modules. For weighted functional brain networks, negative edges could mean something completely
+    different, hence treat positive and negative edges separately.
+    Warning: W must be a symmetric matrix.
+    :param W: numpy array for a *symmetric* weighted adjacency matrix
+    :param k1: group 1 list of nodes
+    :param k2: (optional) group 2 list of nodes
+    :return:
     """
-    return connectivity_strength(a_part, W, k1)
+    pos_W = W * (W >= 0)
+    neg_W = W * (W <= 0)
+    if k2 is None:
+        k2_nodes = k1
+    else:
+        k2_nodes = k2
+    k1_nodes = k1
+    if len(k1_nodes) == 0 or len(k2_nodes) == 0:
+        return 0, 0
+    if len(k1_nodes) <= len(k2_nodes):
+        small_set = k1_nodes
+        large_set = k2_nodes
+    else:
+        small_set = k2_nodes
+        large_set = k1_nodes
+    pos_edges_w = 0
+    neg_edges_w = 0
+    for n1 in small_set:
+        # Positive
+        between_edges = pos_W[n1, large_set]
+        pos_edges_w += sum(between_edges)
+        # Negative
+        between_edges = neg_W[n1, large_set]
+        neg_edges_w += sum(between_edges)
+    pos_con = pos_edges_w / (len(k1_nodes) * len(k2_nodes))
+    neg_con = neg_edges_w / (len(k1_nodes) * len(k2_nodes))
+    return pos_con, neg_con
+
+# ------------------------------------------------------------------------------------------------------------------------
+def stationarity(partitions_list):
+    """
+
+    :param partitions_list:
+    :return:
+    """
 
 
-def intraconnectivity(a_part, W, k1, k2):
+def get_network_diagnostic(partitions_list):
     """
-    Also called Between-Module connectivity or Relative Interaction Strength.
-    :param a_part: partition
-    :param W: *symmetric* weighted adjacency matrix
-    :param k1: module 1
-    :param k2: module 2
-    :return: float, float
+    Based on "Robust detection of dynamic community structure in networks" (Bassett2013a), the 4 network diagnostic
+    measures are:
+    1. Modularity: single-layer modularity value for each partition
+    2. Number of communities: number of communities in each partition layer
+    3. Community size: community size for each layer
+    4. Stationarity: stationarity of each community
+    :param partitions_list: a list of partitions. This should be grouped appropriately.
+    :return: dictionary containing the network diagnostic values
     """
-    epsilon = sys.float_info.epsilon
-    pos_i12, neg_i12 = connectivity_strength(a_part, W, k1, k2)
-    print("1,2: ", pos_i12, neg_i12)
-    pos_i1, neg_i1 = connectivity_strength(a_part, W, k1)
-    print("1,1: ", pos_i1, neg_i1)
-    pos_i2, neg_i2 = connectivity_strength(a_part, W, k2)
-    print("2,2: ", pos_i2, neg_i2)
-    if neg_i1 == 0:
-        neg_i1 = -1*epsilon
-    if neg_i2 == 0:
-        neg_i2 = -1*epsilon
-    if pos_i1 == 0:
-        pos_i1 = epsilon
-    if pos_i2 == 0:
-        pos_i2 = epsilon
-    return pos_i12/math.sqrt(pos_i1*pos_i2), neg_i12/math.sqrt(neg_i1*neg_i2)
+    mean_community_size = []
+    for a_part in partitions_list:
+        ccc = Counter(a_part)
+    res = {'Modularity': 0, 'Number of communities': len(ccc), 'Community size': 0, 'Stationarity': 0}
