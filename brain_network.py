@@ -44,6 +44,33 @@ def get_avg_connectome(dir_path, shape, negative_weights=True):
     return avg_nx_graph
 
 
+def apply_threshold(th, W, binarise=False):
+    """
+    Threshold weighted correlation matrix by retaining x% of the strongest edges.
+    :param th: Threshold % (x)
+    :param W: Weighted correlation matrix
+    :param binarise: If return matrix is a binary matrix of the retained edges or weighted.
+    :return: thresholded matrix
+    """
+    res = np.zeros(W.shape)
+    n = W.shape[0]
+    ne = int((n*n - n)/2)
+    n_new = int(ne*th - 0.5) + 1
+    indices = np.triu_indices(n, k=1)
+    edge_weights = W[indices]
+    edges = zip(zip(indices[0], indices[1]), edge_weights)
+    sorted_edges = sorted(edges, key=lambda x: x[1], reverse=True)
+    keep_edges = sorted_edges[:n_new]
+    if binarise:
+        for ed, _ in keep_edges:
+            res[ed[0], ed[1]] = 1
+            res[ed[1], ed[0]] = 1
+    else:
+        for ed, w in keep_edges:
+            res[ed[0], ed[1]] = w
+            res[ed[1], ed[0]] = w
+    return res
+
 def get_network_stats(G):
     """
     Given a network G, print basic network statistics.
@@ -375,6 +402,7 @@ def connectivity_strength(a_part, W, k1, k2=None):
 
 def nodal_connectivity_strength(W, k1, k2=None):
     """
+    * This is different from connectivity strength function only by the input parameters. Otherwise it is the same calculation.
     Measures the connectivity strength within or between sets of nodes. If k2 is None, then this calculates intraconnectivity
     strength. Else it calculates interconnectivity strength. Note that this is *not* the average edge weight
     within/between modules. For weighted functional brain networks, negative edges could mean something completely
