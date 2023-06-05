@@ -11,6 +11,7 @@ WIP - brain_network.py
 - [X] Function for averaging brain connectomes
 - [X] Function for getting basic network statistics (need cleaning up)
 - [X] Function for applying threshold to correlation matrices (functional connectomes). 
+
 controllability.py
 - [X] Modal and Average Controllability functions  
 
