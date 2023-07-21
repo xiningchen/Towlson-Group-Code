@@ -225,36 +225,36 @@ def flexibility(cycle_partitions):
     return f_i / max_switches
 
 
-def average_flexibility(cycle_partitions, icn_i=-1, nodal=False):
-    """
-    The average flexibility of a module/network is the average of all nodal flexibility in that module.
-    :param cycle_partitions: list of partitions (list). Note, this list should be ordered from time = 0 to time = l
-    :param icn_i: module id that corresponds to the module labels in the partitions, default = -1 which will get flexibility
-    of all nodes.
-    :param nodal: Boolean, whether to return node level flexibility or not.
-    :return: average flexibility of a module/group/network, node level flexibility
-    """
-
-    N = len(cycle_partitions[0])
-    if icn_i != -1:
-        noi_is = [j for j, ni in enumerate(cycle_partitions[0]) if ni == icn_i]
-        if len(noi_is) == 0:
-            return 0, []
-        f_is = flexibility(cycle_partitions)
-        avg_flex = 0
-        node_flex = [0] * N
-        for noi in noi_is:
-            if nodal:
-                node_flex[noi] = f_is[noi]
-            avg_flex += f_is[noi]
-        return avg_flex / len(noi_is), node_flex
-    else:
-        f_is = flexibility(cycle_partitions)
-        avg_flex = sum(f_is) / len(f_is)
-        if nodal:
-            return avg_flex, f_is
-        else:
-            return avg_flex, []
+# def average_flexibility(cycle_partitions, icn_i=-1, nodal=False):
+#     """
+#     The average flexibility of a module/network is the average of all nodal flexibility in that module.
+#     :param cycle_partitions: list of partitions (list). Note, this list should be ordered from time = 0 to time = l
+#     :param icn_i: module id that corresponds to the module labels in the partitions, default = -1 which will get flexibility
+#     of all nodes.
+#     :param nodal: Boolean, whether to return node level flexibility or not.
+#     :return: average flexibility of a module/group/network, node level flexibility
+#     """
+#
+#     N = len(cycle_partitions[0])
+#     if icn_i != -1:
+#         noi_is = [j for j, ni in enumerate(cycle_partitions[0]) if ni == icn_i]
+#         if len(noi_is) == 0:
+#             return 0, []
+#         f_is = flexibility(cycle_partitions)
+#         avg_flex = 0
+#         node_flex = [0] * N
+#         for noi in noi_is:
+#             if nodal:
+#                 node_flex[noi] = f_is[noi]
+#             avg_flex += f_is[noi]
+#         return avg_flex / len(noi_is), node_flex
+#     else:
+#         f_is = flexibility(cycle_partitions)
+#         avg_flex = sum(f_is) / len(f_is)
+#         if nodal:
+#             return avg_flex, f_is
+#         else:
+#             return avg_flex, []
 
 
 def autocorrelation_fct(t, tm, icn_i):
@@ -403,11 +403,6 @@ def connectivity_strength(a_part, W, k1, k2=None):
 def nodal_connectivity_strength(W, k1, k2=None):
     """
     * This is different from connectivity strength function only by the input parameters. Otherwise it is the same calculation.
-    Measures the connectivity strength within or between sets of nodes. If k2 is None, then this calculates intraconnectivity
-    strength. Else it calculates interconnectivity strength. Note that this is *not* the average edge weight
-    within/between modules. For weighted functional brain networks, negative edges could mean something completely
-    different, hence treat positive and negative edges separately.
-    Warning: W must be a symmetric matrix.
     :param W: numpy array for a *symmetric* weighted adjacency matrix
     :param k1: group 1 list of nodes
     :param k2: (optional) group 2 list of nodes
@@ -440,6 +435,56 @@ def nodal_connectivity_strength(W, k1, k2=None):
     pos_con = pos_edges_w / (len(k1_nodes) * len(k2_nodes))
     neg_con = neg_edges_w / (len(k1_nodes) * len(k2_nodes))
     return pos_con, neg_con
+
+
+def adj_mat_grouped_by_modules(W, partition):
+    """
+    Given a matrix, shuffle rows/columns so that nodes belonging to the same community are grouped together.
+    :param W: matrix to shuffle (network)
+    :param partition: community breakdown (module assignment for each node in W)
+    :return: a shuffled matrix W' grouped based on the partition information
+    """
+    N = W.shape[0]
+    shuf = sorted(zip(range(0, N), partition), key=lambda x: x[1])
+    shuf_order, _ = zip(*shuf)
+    plot_mat = np.zeros((N, N))
+    for i in range(N):
+        r = shuf_order[i]
+        ri = np.zeros(1054)
+        for s, j in enumerate(shuf_order):
+            ri[s] = W[r][j]
+        plot_mat[i, :] = ri
+        plot_mat[:, i] = ri
+    return plot_mat
+
+
+def is_connected(A):
+    """
+    Calculate the connected components of a graph defined by its adjacency matrix A.
+    :param A: Numpy 2D array - the adjacency (boolean) matrix of a graph
+    :return: number of components (int), list of components (list of lists)
+    """
+    adj_list = []
+    for i in range(A.shape[0]):
+        adj_list.append(list(np.nonzero(A[i, :])[0]))
+    node_list = np.zeros(A.shape[0])
+    num_connected_components = 0
+    connected_components = []
+    while len(np.where(node_list == 0)[0]) > 0:
+        root = np.where(node_list == 0)[0][0]
+        num_connected_components += 1
+        a_component = []
+        # DFS
+        stack = adj_list[root]
+        while len(stack) > 0:
+            next = stack.pop()
+            if node_list[next] == 1:
+                continue
+            node_list[next] = 1
+            a_component.append(next)
+            stack = stack + adj_list[next]
+        connected_components.append(a_component)
+    return num_connected_components, connected_components
 
 # ------------------------------------------------------------------------------------------------------------------------
 def stationarity(partitions_list):
