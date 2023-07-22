@@ -474,8 +474,9 @@ def is_connected(A):
         root = np.where(node_list == 0)[0][0]
         num_connected_components += 1
         a_component = []
-        # DFS
         stack = adj_list[root]
+        node_list[root] = 1
+        # DFS
         while len(stack) > 0:
             next = stack.pop()
             if node_list[next] == 1:
