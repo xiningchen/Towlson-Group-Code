@@ -29,6 +29,7 @@ If your audience is from neuroscience/biology background, BrainNet Viewer really
 ### FreeSurfer / FSLview
 Some labs uses FreeSurfer or FSLview to visualize anatomical images instead of FSLeyes. FSLeyes and FreeSurfer/FSLview serve the same purpose which is if your audience is from neuro/biology background they will use one of these softwares for visualizing. However the two softwares have slightly different input formats. The python code "fslview_customizer.py" can be used to generate LUT files for visualizing in FreeSurfer/FSLview. Download and update the global parameters in the code to suit your needs and create LUT files. After updating the global parameters you can import and use functions like: 
 > import fslview_customizer as surfer
+
 > surfer.create_cortical_surfer_lut(my_partition, "a file name")
 
 ### Resources/References 
