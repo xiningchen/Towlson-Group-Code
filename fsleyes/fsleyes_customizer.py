@@ -165,7 +165,7 @@ def export_for_fsleyes(project, partition, fname, btype, reindex="top8"):
                        data_values=formatted_data)
 
 
-def create_cortical_lut(partition, fname, lut_fname='Schaefer2018_1000Parcels_7Networks_order.lut'):
+def create_cortical_fsleyes_lut(partition, fname, lut_fname='Schaefer2018_1000Parcels_7Networks_order.lut'):
     """
     Creates a .lut file for the Schaefer2018 cortical Atlas. A LUT file is a Look Up Table which is used to visualize
     .nii files in FSLeyes. The look-up table will assign a value to each node in the brain atlas. This function
@@ -189,7 +189,7 @@ def create_cortical_lut(partition, fname, lut_fname='Schaefer2018_1000Parcels_7N
     :return: None. Creates a .lut in listed path.
     """
     color_rgb = {0: [255, 51, 51], 1: [102, 179, 255], 2: [179, 102, 255], 3: [255, 179, 102], 4: [0, 153, 77],
-                 5: [255, 204, 255], 6: [245, 211, 20], 7: [201, 0, 117], 8: [128, 128, 128], -1: [0, 0, 0]}
+                 5: [255, 204, 255], 6: [245, 211, 20], 7: [201, 0, 117], 8: [128, 128, 128], -1: [255, 255, 255]}
     f = open(lut_fname, "r")
     file_content = f.readlines()
     f.close()
@@ -203,7 +203,7 @@ def create_cortical_lut(partition, fname, lut_fname='Schaefer2018_1000Parcels_7N
         output_file.write(my_file_content)
 
 
-def create_subcortical_lut(partition, fname, lut_fname='Subcortical.nii.txt'):
+def create_subcortical_fsleyes_lut(partition, fname, lut_fname='Subcortical.nii.txt'):
     """
     Creates a .lut file for the Tian subcortex Atlas. Note: this function is built for a brain network that contains both
     cortical and subcortical nodes. The cortical nodes comes from the Schaefer2018 cortical Atlas while the subcortical
@@ -216,7 +216,7 @@ def create_subcortical_lut(partition, fname, lut_fname='Subcortical.nii.txt'):
     :return: None. Creates a .lut in listed path.
     """
     color_rgb = {0: [255, 51, 51], 1: [102, 179, 255], 2: [179, 102, 255], 3: [255, 179, 102], 4: [0, 153, 77],
-                 5: [255, 204, 255], 6: [245, 211, 20], 7: [201, 0, 117], 8: [128, 128, 128], -1: [0, 0, 0]}
+                 5: [255, 204, 255], 6: [245, 211, 20], 7: [201, 0, 117], 8: [128, 128, 128], -1: [255, 255, 255]}
     f = open(lut_fname, "r")
     file_content = f.readlines()
     f.close()

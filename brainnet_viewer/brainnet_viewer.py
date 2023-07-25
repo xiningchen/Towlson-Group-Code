@@ -14,6 +14,25 @@ def __check_path(full_path):
         os.makedirs(os.path.dirname(full_path))
 
 
+def export_specific_nodes(path, node_df, node_list, color=None, size=None, file_name='you_should_name_your_files'):
+    file_name += '.node'
+    file_path = os.path.join(path, file_name)
+    __check_path(file_path)
+    if color is None:
+        color = {x: 1 for x in node_df.index}
+    if size is None:
+        size = {x: 1 for x in node_df.index}
+
+    with open(file_path, 'w') as writer:
+        lines = []
+        for node_name in node_list:
+            row = node_df.loc[node_name]
+            nn = node_name.replace("_", "-")
+            lines.append(f"{row['X']}\t{row['Y']}\t{row['Z']}\t{color[node_name]}\t{size[node_name]}\t{nn}\n")
+        writer.writelines(lines)
+    print(f"File saved to {file_name}")
+
+
 def export_node_file(path, node_df, color=None, size=None, file_name='you_should_name_your_files'):
     """
     Function for exporting a .node file for BrainNet Viewer.
@@ -55,8 +74,9 @@ def export_edge_file(adj_df, path, file_name='you_should_name_your_files', binar
     """
     file_name += '.edge'
     file_path = os.path.join(path, file_name)
+    print(file_path)
     __check_path(file_path)
-    with open(file_name, 'w') as writer:
+    with open(file_path, 'w') as writer:
         lines = []
         for nodeLabel, row in adj_df.iterrows():
             line = ""

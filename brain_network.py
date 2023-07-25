@@ -2,7 +2,16 @@
 Functions for creating network x graphs using brain connectome data and computing a few network metrics given a
 network.
 
-Last updated: April 24, 2023
+Last update changes:
+- Added thresholding code
+- Added is_connected code for detecting if a graph is connected
+- Updated PC code to work with matrix instead of networkX
+
+Future changes:
+- NetworkX is very slow. Code here should be changed to work with adj. matrix only instead of networkX graphs.
+- Include a jupyter notebook to demo similar functions here but using networkx library instead.
+
+Last updated: July 25, 2023
 Author(s): Xining Chen
 """
 import os
@@ -177,17 +186,26 @@ def get_zscore(G, communities, community_to_node_list):
     return zscore_per_community, G
 
 
-def get_pc(G, nodeList, community_to_node_list):
+def get_pc(W, partition):
     """
-    Calculate weighted participation coefficient for each node in graph G.
-    :param G:
-    :param nodeList:
-    :param community_to_node_list:
-    :return:
+    Calculate weighted participation coefficient for each node in weighted adjacency matrix W.
+
+    :param W: 2D numpy array (weighted adjacency matrix W) W should be symmetrical (undirected graph) and can be
+    weighted or binary.
+    :param partition: a list (non-overlapping community partition list)
+    :return: PC value of each node in W
     """
-    pc = {n: 0 for n in nodeList}
-    pc_attrs = {n: {"pc": 0} for n in G.nodes()}
-    for node in nodeList:
+    if W.shape[0] != W.shape[1]:
+        print("ERROR: Bad graph. Exit code.")
+        return []
+    pc = np.zeros(W.shape[0])
+    module_nodes = {m: None for m in set(partition)}
+    partition_np = np.array(partition)
+    for m in module_nodes.keys():
+        module_nodes[m] = np.where(partition_np == m)[0]
+    # calculate PC for each node
+    for node in range(W.shape[0]):
+
         w_i = G.degree(node, weight="weight")
         tot = 0
         for comNum, nlist in community_to_node_list.items():

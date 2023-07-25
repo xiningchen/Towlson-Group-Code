@@ -164,3 +164,4 @@ def draw_community(G, partition):
     nx.draw_networkx_nodes(G, pos, partition.keys(), node_size=40, cmap=cmap, node_color=list(partition.values()))
     nx.draw_networkx_edges(G, pos, alpha=0.5)
     plt.show()
+

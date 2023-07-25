@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from colour import Color
 
-
+# Global parameters - YOU NEED TO UPDATE THESE LOCALLY TO WHATEVER YOU'RE WORKING WITH.
 color_rgb = {0: [255, 51, 51], 1: [102, 179, 255], 2: [179, 102, 255], 3: [255, 128, 0], 4: [0, 153, 77],
              5: [255, 204, 255], 6: [245, 211, 20], 7: [201, 0, 117], 8: [128, 128, 128], -1: [255, 255, 255]}
 cortical_lut_f = 'Schaefer2018_1000Parcels_7Networks_order.txt'
