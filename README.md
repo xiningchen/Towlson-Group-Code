@@ -3,16 +3,25 @@ This is a repository of some functions and code I used frequently while working 
 
 The initial idea was to have a example/demo notebook to go through how to read in some brain network data, create a network object, and compute some network metrics about the graph. Sadly I realized it is hard to do that because the brain data I have is confidential, so I cannot upload them to the internet. If you're reading this because you're a new student that just joined our lab, you'll probably have your own brain data in the format of some .xlsx file or .mat file (MATLAB file). Start by checking out the data_io.py Python file that includes some functions on how you can read those files and create a NetworkX graph object (this is your brain network!)  
 
-## Starting code 
+## Code base
 data_io.py
-- [X] Functions for reading i brain connectome data stored as .XLSX or MATLAB files
+> General utility functions
+- [X] Functions for reading brain connectome data stored as .XLSX or MATLAB files
+- [X] Functions for saving / reading pickles 
 
-WIP - brain_network.py
+brain_network.py
+> Functions for analyzing connectomes and calculating commonly used network metrics. This is the most important file. Recommend knowing what functions are in here so you don't have to re-program it. 
 - [X] Function for averaging brain connectomes
-- [X] Function for getting basic network statistics (need cleaning up)
-- [X] Function for applying threshold to correlation matrices (functional connectomes). 
+- [X] Function for applying threshold to correlation matrices (functional connectomes).
+- [X] Functions for Participation coefficient and within module z-scores. 
+- [X] Functions for degree distribution 
+- [X] Function for calculating flexibility 
+- [X] Function for connectivity and interaction strength 
+- [X] Function for grouping matrix columns by module 
+- [X] Function for checking if a graph is connected 
 
 controllability.py
+> Specialized calculations for network control theory.
 - [X] Modal and Average Controllability functions  
 
 ## Visualizations 

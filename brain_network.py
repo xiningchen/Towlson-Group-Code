@@ -1,27 +1,29 @@
 """
-Functions for creating network x graphs using brain connectome data and computing a few network metrics given a
-network.
+Functions for analyzing human brain connectomes. NetworkX is very slow. Code here works with adj. matrix only instead
+of networkX graphs so should be much faster on large connectomes. For how to work with NetworkX, see <TBA>.jupyter
+notebook demo (coming soon...).
 
 Last update changes:
 - Added thresholding code
 - Added is_connected code for detecting if a graph is connected
 - Updated PC code to work with matrix instead of networkX
+- Updated zscore
 
 Future changes:
-- NetworkX is very slow. Code here should be changed to work with adj. matrix only instead of networkX graphs.
 - Include a jupyter notebook to demo similar functions here but using networkx library instead.
 
-Last updated: July 25, 2023
+Last updated: July 26, 2023
 Author(s): Xining Chen
 """
 import os
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-import networkx as nx
-import statistics as stats
 import math
+import bct
 from collections import Counter
+
+WARNING_ON = False
 
 
 def get_avg_connectome(dir_path, shape, negative_weights=True):
@@ -30,7 +32,7 @@ def get_avg_connectome(dir_path, shape, negative_weights=True):
     Modify the read_excel() function to read additional rows and columns. Currently set to 94x94 matrix.
     :param dir_path: file path to the folder that contains the connectomes to be averaged
     :param shape: connectome shape
-    :return: networkx graph with edge weights
+    :return: averaged connectome matrix W (a single 2D array)
     """
     total_connectome = np.zeros(shape=shape)
     num_files = 0
@@ -43,14 +45,10 @@ def get_avg_connectome(dir_path, shape, negative_weights=True):
             num_files += 1
             total_connectome = total_connectome + brain_numpy_array
     total_connectome = total_connectome / num_files
-
     if negative_weights:
-        avg_nx_graph = nx.from_numpy_array(total_connectome)
-        avg_nx_graph.edges(data=True)
+        return total_connectome
     else:
-        avg_nx_graph = nx.from_numpy_array(total_connectome.clip(0))
-        avg_nx_graph.edges(data=True)
-    return avg_nx_graph
+        return total_connectome.clip(0)
 
 
 def apply_threshold(th, W, binarise=False):
@@ -63,8 +61,8 @@ def apply_threshold(th, W, binarise=False):
     """
     res = np.zeros(W.shape)
     n = W.shape[0]
-    ne = int((n*n - n)/2)
-    n_new = int(ne*th - 0.5) + 1
+    ne = int((n * n - n) / 2)
+    n_new = int(ne * th - 0.5) + 1
     indices = np.triu_indices(n, k=1)
     edge_weights = W[indices]
     edges = zip(zip(indices[0], indices[1]), edge_weights)
@@ -80,66 +78,17 @@ def apply_threshold(th, W, binarise=False):
             res[ed[1], ed[0]] = w
     return res
 
-def get_network_stats(G):
+
+def get_degree_distribution(W):
     """
-    Given a network G, print basic network statistics.
-    Network stats:
-    (1) Average weight (if weighted) (float)
-    (2) Average degree (float)
-    (3) Degree distribution
-    (4) Weight distribution (if weighted) (list)
-    (5) Average path length (float)
-    (6) Average clustering coefficient (float)
-    :param G: NetworkX graph G (can be weighted or unweighted)
-    :return: dictionary containing network information
+    Returns the degree (or weighted degree if W is weighted adjacency matrix) of each node in the network
+    :param W: adjacency matrix (2d numpy array)
+    :return: a list of each node's degree
     """
-    result = {'avg_degree': 0.0,
-              'avg_weight': 0.0,
-              'degree_seq': [],
-              'weight_seq': [],
-              'avg_path_length': 0.0,
-              'avg_clustering_coef': 0.0}
-    paths = []
-    for C in (G.subgraph(c).copy() for c in nx.connected_components(G)):
-        paths.append(nx.average_shortest_path_length(C))
-    result['avg_path_length'] = float(sum(paths)) / len(paths)
-    result['avg_clustering_coef'] = nx.average_clustering(G)
-    # Degree distribution
-    degree_seq = sorted([d for n, d in G.degree()], reverse=True)
-    result['avg_degree'] = sum(degree_seq) / len(degree_seq)
-    result['degree_seq'] = degree_seq
-    # Weighted distribution
-    attributes = nx.get_edge_attributes(G, 'weight')
-    if len(attributes) != 0:
-        weight_seq = sorted([G.degree(node, weight="weight") for node in G], reverse=True)
-        result['avg_weight'] = sum(weight_seq) / len(weight_seq)
-        result['weight_seq'] = weight_seq
-    return result
-
-
-def get_network_stats2(G):
-    """
-    More basic network metrics.
-    :param G:
-    :return:
-    """
-    result = {'avg_path_length': nx.average_shortest_path_length(G),
-              'clustering': np.mean(list(nx.clustering(G, weight="weight").values())),
-              'shortest_path': nx.average_shortest_path_length(G),
-              'global_efficiency': nx.global_efficiency(G)}
-    node_strengths = sorted([(node, G.degree(node, weight="weight")) for node in G.nodes()], reverse=True,
-                            key=lambda x: x[1])
-    avg_node_strength = [x[1] for x in node_strengths]
-    result['avg_weight'] = sum(avg_node_strength) / len(avg_node_strength)
-    return result
-
-
-def get_degree_distribution(W, weighted=False):
-    # For adj. matrix W
-    np_W = np.array(W)
-    zero_W = (np_W != 0)
-
-    # For networkX graph
+    degree_dist = np.zeros(W.shape[0])
+    for i in W.shape[0]:
+        degree_dist[i] = np.sum(np.where(W[i] != 0))
+    return degree_dist
 
 
 def get_community_to_node_map(communities, nodeMetaData):
@@ -158,70 +107,136 @@ def get_community_to_node_map(communities, nodeMetaData):
     return community_to_node_list
 
 
-def get_zscore(G, communities, community_to_node_list):
-    """
-    Calculate weighted z-score for each node in graph G.
-    :param G:
-    :param communities:
-    :param community_to_node_list:
-    :return: z-score for each community, graph G with z-score attribute added to each node.
-    """
-    zscore_per_community = {c: [] for c in communities.values()}
-    zscore_attrs = {n: {"zscore": 0} for n in G.nodes()}
-    for comNum, nlist in community_to_node_list.items():
-        w = []
-        for v1 in nlist:
-            w_i = 0
-            for v2 in nlist:
-                if not (v2 in G[v1]):
-                    continue
-                w_i += G[v1][v2]["weight"]
-            w.append(w_i)
-        data = np.array(w)
-        zscore_per_community[comNum] = stats.zscore(data)
-        for i, v1 in enumerate(nlist):
-            zscore_attrs[v1]["zscore"] = zscore_per_community[comNum][i]
-        nx.set_node_attributes(G, zscore_attrs)
-        # print(zscore_per_community[comNum])
-    return zscore_per_community, G
+# def within_module_zscore(W, partition):
+#     """
+#     Calculate the within-module degree z-score for each node in a network.
+#     :param W: 2D numpy array (connectome) W should be symmetrical (undirected graph) and can be
+#     weighted or binary. Assumes NO SELF-LOOPS (main diagonal of W is 0).
+#     :param partition: non-overlapping community affiliation vector (list)
+#     :return:
+#     """
+#     all_modules = set(partition)
+#     partition_np = np.array(partition)
+#     within_module_nodes = {m: None for m in all_modules}
+#     within_module_mean_std = {m: None for m in all_modules}
+#     for m in all_modules:
+#         within_module_nodes[m] = np.where(partition_np == m)[0]
+#         dist = np.sum(W[within_module_nodes[m]][:, within_module_nodes[m]], axis=1)
+#         within_module_mean_std[m] = (np.mean(dist), np.std(dist))
+#     zscore = np.zeros(W.shape[0])
+#     for node in range(W.shape[0]):
+#         m_i = partition[node]
+#         within_module_degree = np.sum(W[node][within_module_nodes[m_i]])
+#         if within_module_mean_std[m_i][1] == 0:
+#             zscore[node] = float("nan")
+#         else:
+#             zscore[node] = (within_module_degree - within_module_mean_std[m_i][0])/within_module_mean_std[m_i][1]
+#     return zscore
 
 
-def get_pc(W, partition):
+def within_module_zscore(W, partition):
     """
-    Calculate weighted participation coefficient for each node in weighted adjacency matrix W.
+    Calculate the within-module degree z-score for each node in a network.
+    :param W: 2D numpy array (connectome) W should be symmetrical (undirected graph) and can be
+    weighted or binary. Assumes NO SELF-LOOPS (main diagonal of W is 0).
+    :param partition: non-overlapping community affiliation vector (list)
+    :return:
+    """
+    all_modules = set(partition)
+    partition_np = np.array(partition)
+    within_module_mean = np.zeros(len(partition))
+    within_module_std = np.zeros(len(partition))
+    within_module_degree = np.zeros(len(partition))
+    problematic_nodes = np.full(len(partition), False)
+    for m in all_modules:
+        within_module_nodes = np.where(partition_np == m)[0]
+        dist = np.sum(W[within_module_nodes][:, within_module_nodes], axis=1)
+        if np.std(dist) == 0:
+            within_module_mean[within_module_nodes] = 0
+            within_module_std[within_module_nodes] = 1
+            problematic_nodes[within_module_nodes] = True
+        else:
+            within_module_mean[within_module_nodes] = np.mean(dist)
+            within_module_std[within_module_nodes] = np.std(dist)
+        within_module_degree[within_module_nodes] = np.sum(W[within_module_nodes][:, within_module_nodes], axis=1)
+    zscore = (within_module_degree - within_module_mean) / within_module_std
+    zscore[problematic_nodes] = 0
+    if WARNING_ON and problematic_nodes.any():
+        print(f"WARNING: There are {sum(problematic_nodes)} problematic nodes.")
+    return zscore
 
-    :param W: 2D numpy array (weighted adjacency matrix W) W should be symmetrical (undirected graph) and can be
-    weighted or binary.
-    :param partition: a list (non-overlapping community partition list)
+
+def participation_coefficient(W, partition):
+    """
+    Calculate the NORMALIZED participation coefficient for each node in the network. Can be weighted or not weighted.
+    :param W: 2D numpy array (connectome) W should be symmetrical (undirected graph) and can be
+    weighted or binary. Assumes NO SELF-LOOPS (main diagonal of W is 0).
+    :param partition: non-overlapping community affiliation vector (list)
     :return: PC value of each node in W
     """
     if W.shape[0] != W.shape[1]:
         print("ERROR: Bad graph. Exit code.")
         return []
-    pc = np.zeros(W.shape[0])
-    module_nodes = {m: None for m in set(partition)}
     partition_np = np.array(partition)
-    for m in module_nodes.keys():
-        module_nodes[m] = np.where(partition_np == m)[0]
-    # calculate PC for each node
-    for node in range(W.shape[0]):
+    ki_m = np.zeros(W.shape[0])
+    for m in set(partition):
+        within_module_nodes = np.where(partition_np == m)[0]
+        ki_m += np.sum(W[:, within_module_nodes], axis=1) ** 2
+    denom = np.sum(W, axis=1) ** 2
+    isolated_nodes = np.where(denom == 0)[0]
+    if len(isolated_nodes) > 0:
+        denom[isolated_nodes] = 1
+        pc = np.ones(W.shape[0]) - (ki_m / denom)
+        pc[isolated_nodes] = 0
+        return pc
+    return np.ones(W.shape[0]) - (ki_m / denom)
 
-        w_i = G.degree(node, weight="weight")
-        tot = 0
-        for comNum, nlist in community_to_node_list.items():
-            w_is = 0
-            for n in nlist:
-                if not (n in G[node]):
-                    continue
-                w_is += G[node][n]["weight"]
-            tot += (w_is / w_i) ** 2
-        if (tot > 1):
-            print(f"ERROR - {node}")
-            break
-        pc[node] = 1 - tot
-        pc_attrs[node]["pc"] = 1 - tot
-    nx.set_node_attributes(G, pc_attrs)
-    return pc, G
+
+def normalized_participation_coefficient(W, partition, n_iter=100):
+    """
+    WARNING: The null model code from BCT is *extremely* slow, hence this function is slow. Don't use this.
+    Calculate the NORMALIZED participation coefficient for each node in the network. Based on the paper
+    "Reducing the influence of intramodular connectivity in participation coefficient" by Pederson et al. 2020.
+    Translated code from Github:
+    https://github.com/omidvarnia/Dynamic_brain_connectivity_analysis/blob/master/participation_coef_norm.m
+    Note: W should only contain positive edges. If the network contains negative edges, need to pre-filter and handle
+    positive and negative edges separately.
+    :param W: 2D numpy array (weighted adjacency matrix W) W should be symmetrical (undirected graph) and can be
+    weighted or binary. Assumes NO SELF-LOOPS (main diagonal of W is 0).
+    :param partition: non-overlapping community affiliation vector (list)
+    :param n_iter: number of matrix randomizations (default = 100)
+    :return: PC value of each node in W
+    """
+    if W.shape[0] != W.shape[1]:
+        print("ERROR: Bad graph. Exit code.")
+        return []
+    n = W.shape[0]
+    modules = set(partition)
+    M = len(modules)
+    partition_np = np.array(partition)
+    ki = np.sum(W, axis=1) ** 2
+    isolated_nodes = np.where(ki == 0)[0]
+    if len(isolated_nodes) > 0:
+        ki[isolated_nodes] = 1
+    ki_m = np.zeros((n, M))
+    within_module_nodes = {m: None for m in modules}
+    for i, m in enumerate(modules):
+        within_module_nodes[m] = np.where(partition_np == m)[0]
+        ki_m[:, i] = np.sum(W[:, within_module_nodes[m]], axis=1)
+    rnd_samples = np.zeros((n, n_iter))
+    for i in tqdm(range(n_iter)):
+        W_rnd = bct.null_model_und_sign(W, 5)
+        print("Created a null model...")
+        x = np.zeros(n)
+        for m in modules:
+            ki_m_rnd = np.sum(W_rnd[:, within_module_nodes[m]], axis=1)
+            x += (ki_m[:, m] - ki_m_rnd) ** 2
+        rnd_samples[:, i] = math.sqrt(0.5 * (x / ki))
+    pc_norm = np.ones(n) - np.median(rnd_samples, axis=1)
+    if WARNING_ON and len(isolated_nodes) > 0:
+        print("There are isolated nodes. Setting their PC to be 0.")
+        pc_norm[isolated_nodes] = 0
+    return pc_norm
 
 
 def flexibility(cycle_partitions):
@@ -243,38 +258,6 @@ def flexibility(cycle_partitions):
     return f_i / max_switches
 
 
-# def average_flexibility(cycle_partitions, icn_i=-1, nodal=False):
-#     """
-#     The average flexibility of a module/network is the average of all nodal flexibility in that module.
-#     :param cycle_partitions: list of partitions (list). Note, this list should be ordered from time = 0 to time = l
-#     :param icn_i: module id that corresponds to the module labels in the partitions, default = -1 which will get flexibility
-#     of all nodes.
-#     :param nodal: Boolean, whether to return node level flexibility or not.
-#     :return: average flexibility of a module/group/network, node level flexibility
-#     """
-#
-#     N = len(cycle_partitions[0])
-#     if icn_i != -1:
-#         noi_is = [j for j, ni in enumerate(cycle_partitions[0]) if ni == icn_i]
-#         if len(noi_is) == 0:
-#             return 0, []
-#         f_is = flexibility(cycle_partitions)
-#         avg_flex = 0
-#         node_flex = [0] * N
-#         for noi in noi_is:
-#             if nodal:
-#                 node_flex[noi] = f_is[noi]
-#             avg_flex += f_is[noi]
-#         return avg_flex / len(noi_is), node_flex
-#     else:
-#         f_is = flexibility(cycle_partitions)
-#         avg_flex = sum(f_is) / len(f_is)
-#         if nodal:
-#             return avg_flex, f_is
-#         else:
-#             return avg_flex, []
-
-
 def autocorrelation_fct(t, tm, icn_i):
     """
     Defined as the number of common nodes found in group $i$ at time $t$ and $t+m$, normalized by the combined number of
@@ -289,74 +272,74 @@ def autocorrelation_fct(t, tm, icn_i):
     return len(t_set.intersection(tm_set)) / len(t_set.union(tm_set))
 
 
-def nodal_association_matrix(a_part):
+def nodal_association_matrix(partition):
     """
     The boolean matrix T where T_{ij} is 1 if times nodes $i$ and $j$ are found in the same community, 0 otherwise.
     The sum of this matrix over a set of partitions is called the module allegiance matrix.
-    :param a_part: a single partition
+    :param partition: non-overlapping community affiliation vector (list)
     :return: T
     """
     T = np.eye(1054)
     for i in range(1054):
         for j in range(i + 1, 1054):
-            if a_part[i] == a_part[j]:
+            if partition[i] == partition[j]:
                 T[i][j] += 1
                 T[j][i] += 1
     return T
 
 
-def interaction_strength(a_part, maP, k1, k2):
+def interaction_strength(partition, maP, k1, k2):
     """
     Interaction strength.
-    :param a_part: a partition
+    :param partition: non-overlapping community affiliation vector (list)
     :param maP: module allegiance matrix
     :param k1: group 1 (module 1)
     :param k2: group 2 (module 2)
     :return:
     """
-    L = len(a_part)
-    size_k1 = Counter(a_part)[k1]
-    size_k2 = Counter(a_part)[k2]
+    L = len(partition)
+    size_k1 = Counter(partition)[k1]
+    size_k2 = Counter(partition)[k2]
     if (size_k1 == 0) or (size_k2 == 0):
         return 0
     P_sum = 0
     for i in range(L):
-        if a_part[i] != k1:
+        if partition[i] != k1:
             continue
         for j in range(L):
-            if a_part[j] != k2:
+            if partition[j] != k2:
                 continue
             P_sum += maP[i][j]
     return P_sum / (size_k1 * size_k2)
 
 
-def average_recruitment(a_part, maP, k1):
+def average_recruitment(partition, maP, k1):
     """
     Average recruitment is the within module interaction strength
-    :param a_part: a partition
+    :param partition: non-overlapping community affiliation vector (list)
     :param maP: module allegiance matrix
     :param k1: group (module)
     :return:
     """
-    return interaction_strength(a_part, maP, k1, k1)
+    return interaction_strength(partition, maP, k1, k1)
 
 
-def average_integration(a_part, maP, k1, k2):
+def average_integration(partition, maP, k1, k2):
     """
     Average integration is the between module interaction strength
-    :param a_part: a partition
+    :param partition: non-overlapping community affiliation vector (list)
     :param maP: module allegiance matrix
     :param k1: group 1 (module)
     :param k2: group 2 (module)
     :return:
     """
-    return interaction_strength(a_part, maP, k1, k2)
+    return interaction_strength(partition, maP, k1, k2)
 
 
-def relative_interaction_strength(a_part, maP, k1, k2):
+def relative_interaction_strength(partition, maP, k1, k2):
     """
     Relative interaction strength is normalizing interaction strength with group's internal interaction strength.
-    :param a_part: a partition
+    :param partition: non-overlapping community affiliation vector (list)
     :param maP: module allegiance matrix
     :param k1: group 1 (module 1)
     :param k2: group 2 (module 2)
@@ -365,16 +348,16 @@ def relative_interaction_strength(a_part, maP, k1, k2):
     if k1 == k2:
         print("Error: Integration is between two different groups (k1 != k2).")
         return -1
-    norm_int = interaction_strength(a_part, maP, k1, k2)
-    I_k1 = interaction_strength(a_part, maP, k1, k1)
-    I_k2 = interaction_strength(a_part, maP, k2, k2)
+    norm_int = interaction_strength(partition, maP, k1, k2)
+    I_k1 = interaction_strength(partition, maP, k1, k1)
+    I_k2 = interaction_strength(partition, maP, k2, k2)
     if (I_k1 == 0) or (I_k2 == 0):
         # This means one of these modules don't exist, hence no interaction strength with itself
         return 0
     return norm_int / (math.sqrt(I_k1 * I_k2))
 
 
-def connectivity_strength(a_part, W, k1, k2=None):
+def connectivity_strength(partition, W, k1, k2=None):
     """
     Measures the connectivity strength within or between modules. If k2 is None, then this calculates intraconnectivity
     strength. Else it calculates interconnectivity strength. Note that this is *not* the average edge weight
@@ -384,7 +367,7 @@ def connectivity_strength(a_part, W, k1, k2=None):
     modules k1 and k2. For weighted functional brain networks, negative edges could mean something completely
     different, hence treat positive and negative edges separately.
     Warning: W must be a symmetric matrix.
-    :param a_part: partition
+    :param partition: non-overlapping community affiliation vector (list)
     :param W: numpy array for a *symmetric* weighted adjacency matrix
     :param k1: module/group 1 (defined in the partition)
     :param k2: (optional) module/group 2 (defined in the partition)
@@ -394,8 +377,8 @@ def connectivity_strength(a_part, W, k1, k2=None):
     neg_W = W * (W <= 0)
     if k2 is None:
         k2 = k1
-    k1_nodes = [i for i, v in enumerate(a_part) if v == k1]
-    k2_nodes = [i for i, v in enumerate(a_part) if v == k2]
+    k1_nodes = [i for i, v in enumerate(partition) if v == k1]
+    k2_nodes = [i for i, v in enumerate(partition) if v == k2]
     if len(k1_nodes) == 0 or len(k2_nodes) == 0:
         return 0, 0
     if len(k1_nodes) <= len(k2_nodes):
@@ -420,7 +403,7 @@ def connectivity_strength(a_part, W, k1, k2=None):
 
 def nodal_connectivity_strength(W, k1, k2=None):
     """
-    * This is different from connectivity strength function only by the input parameters. Otherwise it is the same calculation.
+    This is different from connectivity strength function only by the input parameters. Otherwise it is the same calculation.
     :param W: numpy array for a *symmetric* weighted adjacency matrix
     :param k1: group 1 list of nodes
     :param k2: (optional) group 2 list of nodes
@@ -459,7 +442,7 @@ def adj_mat_grouped_by_modules(W, partition):
     """
     Given a matrix, shuffle rows/columns so that nodes belonging to the same community are grouped together.
     :param W: matrix to shuffle (network)
-    :param partition: community breakdown (module assignment for each node in W)
+    :param partition: non-overlapping community affiliation vector (list)
     :return: a shuffled matrix W' grouped based on the partition information
     """
     N = W.shape[0]
@@ -505,14 +488,8 @@ def is_connected(A):
         connected_components.append(a_component)
     return num_connected_components, connected_components
 
+
 # ------------------------------------------------------------------------------------------------------------------------
-def stationarity(partitions_list):
-    """
-
-    :param partitions_list:
-    :return:
-    """
-
 
 def get_network_diagnostic(partitions_list):
     """
@@ -529,3 +506,56 @@ def get_network_diagnostic(partitions_list):
     for a_part in partitions_list:
         ccc = Counter(a_part)
     res = {'Modularity': 0, 'Number of communities': len(ccc), 'Community size': 0, 'Stationarity': 0}
+
+# def get_network_stats(G):
+#     """
+#     Given a network G, print basic network statistics.
+#     Network stats:
+#     (1) Average weight (if weighted) (float)
+#     (2) Average degree (float)
+#     (3) Degree distribution
+#     (4) Weight distribution (if weighted) (list)
+#     (5) Average path length (float)
+#     (6) Average clustering coefficient (float)
+#     :param G: NetworkX graph G (can be weighted or unweighted)
+#     :return: dictionary containing network information
+#     """
+#     result = {'avg_degree': 0.0,
+#               'avg_weight': 0.0,
+#               'degree_seq': [],
+#               'weight_seq': [],
+#               'avg_path_length': 0.0,
+#               'avg_clustering_coef': 0.0}
+#     paths = []
+#     for C in (G.subgraph(c).copy() for c in nx.connected_components(G)):
+#         paths.append(nx.average_shortest_path_length(C))
+#     result['avg_path_length'] = float(sum(paths)) / len(paths)
+#     result['avg_clustering_coef'] = nx.average_clustering(G)
+#     # Degree distribution
+#     degree_seq = sorted([d for n, d in G.degree()], reverse=True)
+#     result['avg_degree'] = sum(degree_seq) / len(degree_seq)
+#     result['degree_seq'] = degree_seq
+#     # Weighted distribution
+#     attributes = nx.get_edge_attributes(G, 'weight')
+#     if len(attributes) != 0:
+#         weight_seq = sorted([G.degree(node, weight="weight") for node in G], reverse=True)
+#         result['avg_weight'] = sum(weight_seq) / len(weight_seq)
+#         result['weight_seq'] = weight_seq
+#     return result
+
+
+# def get_network_stats2(G):
+#     """
+#     More basic network metrics.
+#     :param G:
+#     :return:
+#     """
+#     result = {'avg_path_length': nx.average_shortest_path_length(G),
+#               'clustering': np.mean(list(nx.clustering(G, weight="weight").values())),
+#               'shortest_path': nx.average_shortest_path_length(G),
+#               'global_efficiency': nx.global_efficiency(G)}
+#     node_strengths = sorted([(node, G.degree(node, weight="weight")) for node in G.nodes()], reverse=True,
+#                             key=lambda x: x[1])
+#     avg_node_strength = [x[1] for x in node_strengths]
+#     result['avg_weight'] = sum(avg_node_strength) / len(avg_node_strength)
+#     return result
