@@ -13,12 +13,13 @@ brain_network.py
 > Functions for analyzing connectomes and calculating commonly used network metrics. This is the most important file. Recommend knowing what functions are in here so you don't have to re-program it. 
 - [X] Function for averaging brain connectomes
 - [X] Function for applying threshold to correlation matrices (functional connectomes).
-- [X] Functions for Participation coefficient and within module z-scores. 
+- [X] Functions for calculating node roles using PC and zscore 
 - [X] Functions for degree distribution 
 - [X] Function for calculating flexibility 
 - [X] Function for connectivity and interaction strength 
 - [X] Function for grouping matrix columns by module 
 - [X] Function for checking if a graph is connected 
+- [ ] Function for determining rich club
 
 controllability.py
 > Specialized calculations for network control theory.

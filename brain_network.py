@@ -107,33 +107,6 @@ def get_community_to_node_map(communities, nodeMetaData):
     return community_to_node_list
 
 
-# def within_module_zscore(W, partition):
-#     """
-#     Calculate the within-module degree z-score for each node in a network.
-#     :param W: 2D numpy array (connectome) W should be symmetrical (undirected graph) and can be
-#     weighted or binary. Assumes NO SELF-LOOPS (main diagonal of W is 0).
-#     :param partition: non-overlapping community affiliation vector (list)
-#     :return:
-#     """
-#     all_modules = set(partition)
-#     partition_np = np.array(partition)
-#     within_module_nodes = {m: None for m in all_modules}
-#     within_module_mean_std = {m: None for m in all_modules}
-#     for m in all_modules:
-#         within_module_nodes[m] = np.where(partition_np == m)[0]
-#         dist = np.sum(W[within_module_nodes[m]][:, within_module_nodes[m]], axis=1)
-#         within_module_mean_std[m] = (np.mean(dist), np.std(dist))
-#     zscore = np.zeros(W.shape[0])
-#     for node in range(W.shape[0]):
-#         m_i = partition[node]
-#         within_module_degree = np.sum(W[node][within_module_nodes[m_i]])
-#         if within_module_mean_std[m_i][1] == 0:
-#             zscore[node] = float("nan")
-#         else:
-#             zscore[node] = (within_module_degree - within_module_mean_std[m_i][0])/within_module_mean_std[m_i][1]
-#     return zscore
-
-
 def within_module_zscore(W, partition):
     """
     Calculate the within-module degree z-score for each node in a network.
@@ -192,6 +165,75 @@ def participation_coefficient(W, partition):
     return np.ones(W.shape[0]) - (ki_m / denom)
 
 
+def get_network_node_roles(W, partition, zscore_threshold=2.5):
+    """
+    Calculate and assign node roles to a network defined by W.
+
+    Based on the paper "Cartography of complex networks: modules and universal roles" by Guimera and Amaral, 2005.
+    Assign node roles to each node of the network. Node roles are defined in the paper mentioned above.
+    Hub vs non-hub nodes are determined by the within module zscore. In the paper they used a threshold of > 2.5 being
+    hub nodes. This to me was arbitrary, hence this threshold can be toggled as part of the function.
+    The node role subcategories are determined by PC values. The boundaries of each role were shown to be
+    general (apply to any size of networks, understand Fig. 4 and caption in paper). Hence the PC value boundaries are
+    not adjustable in this function.
+    :param W: 2D numpy array (connectome) W should be symmetrical (undirected graph) and can be
+    weighted or binary. Assumes NO SELF-LOOPS (main diagonal of W is 0).
+    :param partition: non-overlapping community affiliation vector (list)
+    :param zscore_threshold: determines cut-off for hub nodes
+    :return: the nodes' role, zscore, and pc values
+    """
+    zscore = within_module_zscore(W, partition)
+    pc = participation_coefficient(W, partition)
+    node_roles = assign_node_roles(zscore, pc, zscore_threshold)
+    return node_roles, zscore, pc
+
+
+def assign_node_roles(zscore, pc, zscore_threshold=2.5):
+    """
+    Assign node roles to a network defined by W.
+
+    Based on the paper "Cartography of complex networks: modules and universal roles" by Guimera and Amaral, 2005.
+    Assign node roles to each node of the network. Node roles are defined in the paper mentioned above.
+    Hub vs non-hub nodes are determined by the within module zscore. In the paper they used a threshold of > 2.5 being
+    hub nodes. This to me was arbitrary, hence this threshold can be toggled as part of the function.
+    The node role subcategories are determined by PC values. The boundaries of each role were shown to be
+    general (apply to any size of networks, understand Fig. 4 and caption in paper). Hence the PC value boundaries are
+    not adjustable in this function.
+    :param zscore:
+    :param pc:
+    :param zscore_threshold:
+    :return:
+    """
+    if len(zscore) != len(pc):
+        print("ERROR: zscore and pc length should be equal (total number of nodes in the network) but they're not?!")
+        return []
+    roles = [None * len(zscore)]
+    for i in range(len(zscore)):
+        if zscore[i] >= zscore_threshold:
+            # hub node categories
+            if pc[i] < 0.3:
+                roles[i] = "R5"
+            elif pc[i] <0.75:
+                roles[i] = "R6"
+            elif pc[i] >= 0.75:
+                roles[i] = "R7"
+            else:
+                roles[i] = "Error in PC value"
+        else:
+            # non-hub categories
+            if pc[i] < 0.05:
+                roles[i] = "R1"
+            elif pc[i] < 0.625:
+                roles[i] = "R2"
+            elif pc[i] < 0.8:
+                roles[i] = "R3"
+            elif pc[i] >= 0.8:
+                roles[i] = "R4"
+            else:
+                roles[i] = "Error in PC value"
+    return roles
+
+
 def normalized_participation_coefficient(W, partition, n_iter=100):
     """
     WARNING: The null model code from BCT is *extremely* slow, hence this function is slow. Don't use this.
@@ -237,6 +279,7 @@ def normalized_participation_coefficient(W, partition, n_iter=100):
         print("There are isolated nodes. Setting their PC to be 0.")
         pc_norm[isolated_nodes] = 0
     return pc_norm
+
 
 
 def flexibility(cycle_partitions):
