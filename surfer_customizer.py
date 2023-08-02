@@ -28,6 +28,7 @@ def create_cortical_surfer_lut(partition, fname):
         vec[4] = str(color_rgb[partition[l]][2])
         my_file_content += '\t'.join(vec)
     with open(f"{output_folder}/{fname}.txt", 'w') as output_file:
+        my_file_content = my_file_content.strip()
         output_file.write(my_file_content)
 
 
@@ -48,8 +49,8 @@ def create_subcortical_surfer_lut(partition, fname):
                            f"{round(color_rgb[partition[1000 + l]][1] / 255, 5)} " \
                            f"{round(color_rgb[partition[1000 + l]][2] / 255, 5)} " \
                            f"{vec[1]}\n"
-
     with open(f"{output_folder}/{fname} subcortex.txt", 'w') as output_file:
+        my_file_content = my_file_content.strip()
         output_file.write(my_file_content)
 
 
@@ -79,8 +80,8 @@ def export_cortical_surfer_lut_gradient(fn, nodes_freq, fname, plot_colors=False
         vec[4] = str(int(color[2]))
         my_file_content += '\t'.join(vec)
     with open(f"{output_folder}/{fname}.txt", 'w') as output_file:
+        my_file_content = my_file_content.strip()
         output_file.write(my_file_content)
-
     if plot_colors:
         # Display a plot with a legend of the colors
         for ci, mc in enumerate(gradient_colors):
@@ -114,4 +115,5 @@ def export_subcortical_surfer_lut_gradient(fn, nodes_freq, fname):
                            f"{color[2]} " \
                            f"{vec[1]}\n"
     with open(f"{output_folder}/{fname} subcortex.txt", 'w') as output_file:
+        my_file_content = my_file_content.strip()
         output_file.write(my_file_content)

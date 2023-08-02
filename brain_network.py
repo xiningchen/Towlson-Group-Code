@@ -213,7 +213,7 @@ def assign_node_roles(zscore, pc, zscore_threshold=2.5):
             # hub node categories
             if pc[i] < 0.3:
                 roles[i] = "R5"
-            elif pc[i] <0.75:
+            elif pc[i] < 0.75:
                 roles[i] = "R6"
             elif pc[i] >= 0.75:
                 roles[i] = "R7"
@@ -279,7 +279,6 @@ def normalized_participation_coefficient(W, partition, n_iter=100):
         print("There are isolated nodes. Setting their PC to be 0.")
         pc_norm[isolated_nodes] = 0
     return pc_norm
-
 
 
 def flexibility(cycle_partitions):
