@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from colour import Color
+# Surfer LUT files need 6 columns: <node id> (start at 1)\t<node name>\t<r>\t<g>\t<b>\t0\n
+# where the last column is the opacity value, usually set to 0.
+# The RGB value is also not normalized [0 - 255].
 
 # Global parameters - YOU NEED TO UPDATE THESE LOCALLY TO WHATEVER YOU'RE WORKING WITH.
 color_rgb = {0: [255, 51, 51], 1: [102, 179, 255], 2: [179, 102, 255], 3: [255, 128, 0], 4: [0, 153, 77],
@@ -66,27 +69,28 @@ def export_cortical_surfer_lut_gradient(fn, nodes_freq, fname, plot_colors=False
     :param plot_colors: if True then you will see a legend of the color gradient plotted, otherwise False
     :return: n/a
     """
-    max_color = Color(rgb=tuple(np.array(color_rgb[fn])/255))
-    gradient_colors = list(Color("white").range_to(max_color, int(max(nodes_freq))+1))
+    max_color = Color(rgb=tuple(np.array(color_rgb[fn]) / 255))
+    gradient_colors = list(Color("white").range_to(max_color, int(max(nodes_freq)) + 1))
     f = open(cortical_lut_f, "r")
     file_content = f.readlines()
     f.close()
     my_file_content = ""
     for l, line in enumerate(file_content):
         vec = line.split("\t")
-        color = np.array(gradient_colors[int(nodes_freq[l])].rgb)*255
+        color = np.array(gradient_colors[int(nodes_freq[l])].rgb) * 255
         vec[2] = str(int(color[0]))
         vec[3] = str(int(color[1]))
         vec[4] = str(int(color[2]))
-        my_file_content += '\t'.join(vec)
+        my_file_content += f"{vec[0].strip()}\t{vec[1].strip()}\t{vec[2]}\t{vec[3]}\t{vec[4]}\t0\n"
     with open(f"{output_folder}/{fname}.txt", 'w') as output_file:
         my_file_content = my_file_content.strip()
         output_file.write(my_file_content)
     if plot_colors:
-        # Display a plot with a legend of the colors
+        plt.subplots(1, figsize=(6, 6))
         for ci, mc in enumerate(gradient_colors):
-            plt.scatter([1], [1], color=mc.web, label=f"{ci} cycles")
-        plt.legend(prop = { "size": 20 }, markerscale=3)
+            plt.scatter([0.1], [0.1], color=mc.web, label=f"{ci} cycles")
+        plt.xlim([0, 1])
+        plt.legend(prop={"size": 20}, markerscale=3)
         plt.show()
 
 
@@ -108,12 +112,9 @@ def export_subcortical_surfer_lut_gradient(fn, nodes_freq, fname):
     f.close()
     my_file_content = ""
     for l, line in enumerate(file_content):
-        color = gradient_colors[int(nodes_freq[l])].rgb
-        vec = line.split(" ")[:-1]
-        my_file_content += f"{vec[0]} {color[0]} " \
-                           f"{color[1]} " \
-                           f"{color[2]} " \
-                           f"{vec[1]}\n"
+        color = np.array(gradient_colors[int(nodes_freq[l])].rgb)*255
+        vec = line.split(" ")
+        my_file_content += f"{vec[0].strip()}\t{vec[1].strip()}\t{int(color[0])}\t{int(color[1])}\t{int(color[2])}\t0\n"
     with open(f"{output_folder}/{fname} subcortex.txt", 'w') as output_file:
         my_file_content = my_file_content.strip()
         output_file.write(my_file_content)
