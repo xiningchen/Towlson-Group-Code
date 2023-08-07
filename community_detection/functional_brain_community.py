@@ -6,16 +6,17 @@ Also includes two partition comparison metrics used in literature:
 These two are effectively the same, just inverse of each other. NMI measures how similar two partitions are and VI
 measures how different two partitions are. Just pick one.
 
-Last updated: Feb. 16 2023
+Last updated: Aug. 7, 2023
 Author(s): Xining Chen
 """
 from collections import Counter
 import networkx as nx
 from math import log
 from matplotlib import pyplot as plt
-from tqdm import tqdm
+import numpy as np
 import bct
 import matplotlib.cm as cm
+import pickle as pkl
 from sklearn.metrics.cluster import normalized_mutual_info_score
 
 
@@ -88,24 +89,24 @@ def variation_of_information(X, Y):
     return vi
 
 
-def community_stats(partitions_by_gamma, similarity_by_gamma):
-    """
-
-    :param partitions_by_gamma:
-    :param similarity_by_gamma:
-    :return:
-    """
-    rep_part = []
-    avg_stability = []
-    std_dev_stab = []
-    variance_stab = []
-    for r, sim_list in tqdm(similarity_by_gamma.items()):
-        list_of_partitions = partitions_by_gamma[r]
-        rep_part.append(get_best_partition(list_of_partitions))
-        # avg_stability.append(stat.mean(sim_list))
-        # std_dev_stab.append(stat.stdev(sim_list))
-        # variance_stab.append(stat.variance(sim_list))
-    return rep_part, avg_stability, std_dev_stab, variance_stab
+# def community_stats(partitions_by_gamma, similarity_by_gamma):
+#     """
+#
+#     :param partitions_by_gamma:
+#     :param similarity_by_gamma:
+#     :return:
+#     """
+#     rep_part = []
+#     # avg_stability = []
+#     # std_dev_stab = []
+#     # variance_stab = []
+#     for r, sim_list in similarity_by_gamma.items():
+#         list_of_partitions = partitions_by_gamma[r]
+#         rep_part.append(get_best_partition(list_of_partitions))
+#         # avg_stability.append(stat.mean(sim_list))
+#         # std_dev_stab.append(stat.stdev(sim_list))
+#         # variance_stab.append(stat.variance(sim_list))
+#     # return rep_part, avg_stability, std_dev_stab, variance_stab
 
 
 def get_best_partition(partitions):
@@ -165,3 +166,54 @@ def draw_community(G, partition):
     nx.draw_networkx_edges(G, pos, alpha=0.5)
     plt.show()
 
+
+if __name__ == '__main__':
+    import sys, os
+    # output_path = sys.argv[1]
+    # input_path = sys.argv[2]
+    # fname = sys.argv[3]
+    output_path = sys.argv[1]
+    input_path = sys.argv[2]
+    fname = sys.argv[3]
+    # print(output_path, input_path, fname)
+
+    inc = 0.001
+    ming = 1
+    maxg = 2
+    reps = 10
+    itr = round((maxg - ming)/inc)
+    if not os.path.exists(output_path):
+        print('Directory:', output_path, '\ndoes not exist, creating new one.')
+        os.makedirs(output_path)
+    else:
+        print('Saving to', output_path)
+    # main(out_path, data_path, fname_i)
+
+    # with open('./raw/ml_input_params_3.pkl', 'rb') as f:
+    #     input_params = pkl.load(f)[fname_i]
+
+    # fname = input_params[0]
+    # idx = input_params[1]
+    # res_range = input_params[2]
+    # out_path = out_path + f'/{idx}/'
+    # if not os.path.exists(out_path):
+    #     os.makedirs(out_path)
+
+    # Load connectome data
+    with open(input_path + f'{fname}', 'rb') as f:
+        W = pkl.load(f)
+    has_neg = np.any(W < 0)
+    if has_neg:
+        b_flag = "negative_asym"
+    else:
+        b_flag = "modularity"
+
+    gamma = [round(ming + i*inc, 3) for i in range(itr)]
+    louvain_res = {'gamma': gamma, 'partitions': [], 'modularity': []}
+    for g in gamma:
+        p_list, m_list = get_partitions(W, g, B=b_flag, rep=reps)
+        louvain_res['partitions'].append(p_list)
+        louvain_res['modularity'].append(m_list)
+
+    with open(os.path.join(output_path, f'{fname}_louvain.pkl', 'wb')) as f:
+        pkl.dump(louvain_res, f)
