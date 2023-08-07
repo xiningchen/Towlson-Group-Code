@@ -10,10 +10,10 @@ Last updated: Aug. 7, 2023
 Author(s): Xining Chen
 """
 from collections import Counter
-import networkx as nx
+# import networkx as nx
 from math import log
-from matplotlib import pyplot as plt
-import numpy as np
+# from matplotlib import pyplot as plt
+# import numpy as np
 import bct
 import matplotlib.cm as cm
 import pickle as pkl
@@ -151,69 +151,69 @@ def get_partitions(W, gamma, B='modularity', rep=2):
     return partitions, modularity
 
 
-def draw_community(G, partition):
-    """
-    Draw the network G given it's community structure (partition).
-    Only use this to get a sense if the community_by_modularity_stability function above is working.
-    Avoid visualizing a brain network like this.
-    :param G: network x graph object
-    :param partition: community structure of G
-    :return:
-    """
-    pos = nx.spring_layout(G)
-    cmap = cm.get_cmap('viridis', max(partition.values()) + 1)
-    nx.draw_networkx_nodes(G, pos, partition.keys(), node_size=40, cmap=cmap, node_color=list(partition.values()))
-    nx.draw_networkx_edges(G, pos, alpha=0.5)
-    plt.show()
+# def draw_community(G, partition):
+#     """
+#     Draw the network G given it's community structure (partition).
+#     Only use this to get a sense if the community_by_modularity_stability function above is working.
+#     Avoid visualizing a brain network like this.
+#     :param G: network x graph object
+#     :param partition: community structure of G
+#     :return:
+#     """
+#     pos = nx.spring_layout(G)
+#     cmap = cm.get_cmap('viridis', max(partition.values()) + 1)
+#     nx.draw_networkx_nodes(G, pos, partition.keys(), node_size=40, cmap=cmap, node_color=list(partition.values()))
+#     nx.draw_networkx_edges(G, pos, alpha=0.5)
+#     plt.show()
 
 
-if __name__ == '__main__':
-    import sys, os
-    # output_path = sys.argv[1]
-    # input_path = sys.argv[2]
-    # fname = sys.argv[3]
-    output_path = sys.argv[1]
-    input_path = sys.argv[2]
-    fname = sys.argv[3]
-    # print(output_path, input_path, fname)
-
-    inc = 0.001
-    ming = 1
-    maxg = 2
-    reps = 10
-    itr = round((maxg - ming)/inc)
-    if not os.path.exists(output_path):
-        print('Directory:', output_path, '\ndoes not exist, creating new one.')
-        os.makedirs(output_path)
-    else:
-        print('Saving to', output_path)
-    # main(out_path, data_path, fname_i)
-
-    # with open('./raw/ml_input_params_3.pkl', 'rb') as f:
-    #     input_params = pkl.load(f)[fname_i]
-
-    # fname = input_params[0]
-    # idx = input_params[1]
-    # res_range = input_params[2]
-    # out_path = out_path + f'/{idx}/'
-    # if not os.path.exists(out_path):
-    #     os.makedirs(out_path)
-
-    # Load connectome data
-    with open(input_path + f'{fname}', 'rb') as f:
-        W = pkl.load(f)
-    has_neg = np.any(W < 0)
-    if has_neg:
-        b_flag = "negative_asym"
-    else:
-        b_flag = "modularity"
-
-    gamma = [round(ming + i*inc, 3) for i in range(itr)]
-    louvain_res = {'gamma': gamma, 'partitions': [], 'modularity': []}
-    for g in gamma:
-        p_list, m_list = get_partitions(W, g, B=b_flag, rep=reps)
-        louvain_res['partitions'].append(p_list)
-        louvain_res['modularity'].append(m_list)
-
-    with open(os.path.join(output_path, f'{fname}_louvain.pkl', 'wb')) as f:
-        pkl.dump(louvain_res, f)
+# if __name__ == '__main__':
+#     import sys, os
+#     # output_path = sys.argv[1]
+#     # input_path = sys.argv[2]
+#     # fname = sys.argv[3]
+#     output_path = sys.argv[1]
+#     input_path = sys.argv[2]
+#     fname = sys.argv[3]
+#     # print(output_path, input_path, fname)
+#
+#     inc = 0.001
+#     ming = 1
+#     maxg = 2
+#     reps = 10
+#     itr = round((maxg - ming)/inc)
+#     if not os.path.exists(output_path):
+#         print('Directory:', output_path, '\ndoes not exist, creating new one.')
+#         os.makedirs(output_path)
+#     else:
+#         print('Saving to', output_path)
+#     # main(out_path, data_path, fname_i)
+#
+#     # with open('./raw/ml_input_params_3.pkl', 'rb') as f:
+#     #     input_params = pkl.load(f)[fname_i]
+#
+#     # fname = input_params[0]
+#     # idx = input_params[1]
+#     # res_range = input_params[2]
+#     # out_path = out_path + f'/{idx}/'
+#     # if not os.path.exists(out_path):
+#     #     os.makedirs(out_path)
+#
+#     # Load connectome data
+#     with open(input_path + f'{fname}', 'rb') as f:
+#         W = pkl.load(f)
+#     has_neg = np.any(W < 0)
+#     if has_neg:
+#         b_flag = "negative_asym"
+#     else:
+#         b_flag = "modularity"
+#
+#     gamma = [round(ming + i*inc, 3) for i in range(itr)]
+#     louvain_res = {'gamma': gamma, 'partitions': [], 'modularity': []}
+#     for g in gamma:
+#         p_list, m_list = get_partitions(W, g, B=b_flag, rep=reps)
+#         louvain_res['partitions'].append(p_list)
+#         louvain_res['modularity'].append(m_list)
+#
+#     with open(os.path.join(output_path, f'{fname}_louvain.pkl', 'wb')) as f:
+#         pkl.dump(louvain_res, f)
