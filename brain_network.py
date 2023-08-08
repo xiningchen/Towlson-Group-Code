@@ -107,13 +107,31 @@ def get_community_to_node_map(communities, nodeMetaData):
     return community_to_node_list
 
 
+def within_module_degree(W, partition):
+    """
+    Calculate the within-module degree (or node strength if W is weighted) for each node in a network.
+    :param W: 2D numpy array (connectome) W should be symmetrical (undirected graph) and can be
+    weighted or binary. Assumes NO SELF-LOOPS (main diagonal of W is 0).
+    :param partition: non-overlapping community affiliation vector (list)
+    :return: within module degree (or strength) of each node in a list
+    """
+    all_modules = set(partition)
+    partition_np = np.array(partition)
+    node_within_degree = np.zeros(len(partition))
+    for m in all_modules:
+        within_module_nodes = np.where(partition_np == m)[0]
+        dist = np.sum(W[within_module_nodes][:, within_module_nodes], axis=1)
+        node_within_degree[within_module_nodes] = dist
+    return node_within_degree
+
+
 def within_module_zscore(W, partition):
     """
     Calculate the within-module degree z-score for each node in a network.
     :param W: 2D numpy array (connectome) W should be symmetrical (undirected graph) and can be
     weighted or binary. Assumes NO SELF-LOOPS (main diagonal of W is 0).
     :param partition: non-overlapping community affiliation vector (list)
-    :return:
+    :return: zscore of each node
     """
     all_modules = set(partition)
     partition_np = np.array(partition)
