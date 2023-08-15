@@ -357,20 +357,28 @@ def interaction_strength(partition, maP, k1, k2):
     :param k2: group 2 (module 2)
     :return:
     """
-    L = len(partition)
     size_k1 = Counter(partition)[k1]
     size_k2 = Counter(partition)[k2]
     if (size_k1 == 0) or (size_k2 == 0):
         return 0
-    P_sum = 0
-    for i in range(L):
-        if partition[i] != k1:
-            continue
-        for j in range(L):
-            if partition[j] != k2:
-                continue
-            P_sum += maP[i][j]
-    return P_sum / (size_k1 * size_k2)
+    m1_nodes = [i for i, p in enumerate(partition) if p == k1]
+    m2_nodes = [i for i, p in enumerate(partition) if p == k2]
+    return np.sum(maP[m1_nodes][:, m2_nodes]) / (size_k1 * size_k2)
+
+
+def interaction_strength_of_nodes(maP, nodes1, nodes2):
+    """
+    Interaction strength.
+    :param maP: module allegiance matrix
+    :param nodes1: list of nodes
+    :param nodes2: list of nodes
+    :return:
+    """
+    size_k1 = len(nodes1)
+    size_k2 = len(nodes2)
+    if (size_k1 == 0) or (size_k2 == 0):
+        return 0
+    return np.sum(maP[list(nodes1)][:, list(nodes2)]) / (size_k1 * size_k2)
 
 
 def average_recruitment(partition, maP, k1):
